@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARC Mission</title>
+<style>
+:root {
+  --paper: #f5f0e6; --card: #fffdf8; --ink: #1c2925; --dim: #56635c; --line: #dcd3c1;
+  --accent: #a94e27; --accent-ink: #fffaf3; --good: #2d6a4f; --mid: #9a6412; --bad: #a3392a;
+  --soft: #ece5d6; --focus: #1d5fa8;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #151b19; --card: #1d2522; --ink: #ece7dc; --dim: #a3aea7; --line: #34403b;
+    --accent: #e08a5e; --accent-ink: #1a120d; --good: #7cc4a1; --mid: #e0b05a; --bad: #ef8d7c;
+    --soft: #242e2a; --focus: #8fc0ff;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.55 var(--sans); }
+h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.15; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 2.9rem); }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.12rem; }
+p { margin: 0; }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+.eyebrow { font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
+.dim { color: var(--dim); }
+.small { font-size: 0.875rem; }
+
+header.top { border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 18px 0 12px; }
+.brand b { font-family: var(--serif); font-size: 1.3rem; letter-spacing: 0.02em; }
+.brand b span { color: var(--accent); }
+nav.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 0; scrollbar-width: none; }
+nav.tabs button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 12px; cursor: pointer; white-space: nowrap; color: var(--dim); }
+nav.tabs button[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+nav.tabs button .n { font-size: 0.7rem; color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+
+main { padding: 32px 0 72px; }
+.lede { max-width: 62ch; color: var(--dim); margin-top: 10px; font-size: 1.05rem; }
+.grid { display: grid; gap: 16px; }
+@media (min-width: 760px) { .g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); } .g-side { grid-template-columns: minmax(0, 320px) 1fr; } }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+.section { margin-top: 36px; }
+.section > h2 { margin-bottom: 14px; }
+
+.btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+.btn:hover { border-color: var(--ink); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.quiet { border-color: transparent; background: none; color: var(--dim); padding: 6px 8px; }
+.btn.on { background: var(--good); border-color: var(--good); color: var(--accent-ink); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.banner { background: var(--soft); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 24px; display: flex; gap: 12px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+
+.score { display: flex; align-items: center; gap: 18px; }
+.score .big { font-family: var(--serif); font-size: 4.2rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.band { display: inline-block; font-weight: 600; text-transform: capitalize; }
+.c-good { color: var(--good); } .c-mid { color: var(--mid); } .c-bad { color: var(--bad); }
+.bars { display: grid; gap: 10px; }
+.bar { display: grid; grid-template-columns: 9.5rem 1fr 2.6rem; gap: 10px; align-items: center; font-size: 0.9rem; }
+.track { height: 8px; border-radius: 99px; background: var(--soft); overflow: hidden; }
+.track i { display: block; height: 100%; border-radius: 99px; background: currentColor; }
+.bar .v { text-align: right; font-variant-numeric: tabular-nums; }
+
+.stat b { display: block; font-family: var(--serif); font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 0.85rem; color: var(--dim); }
+
+.finding { border-left: 4px solid var(--line); }
+.finding.s3 { border-left-color: var(--bad); } .finding.s2 { border-left-color: var(--mid); } .finding.s1 { border-left-color: var(--good); }
+.finding .tag { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+.finding h3 { margin: 4px 0 8px; }
+.finding .next { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+
+label.f { display: grid; gap: 4px; font-size: 0.9rem; font-weight: 600; }
+label.f small { font-weight: 400; color: var(--dim); }
+input[type=text], input[type=number], select, textarea { width: 100%; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+textarea { resize: vertical; min-height: 64px; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+.check { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; cursor: pointer; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+th { text-align: left; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); font-weight: 600; padding: 6px 8px 6px 0; white-space: nowrap; }
+td { padding: 5px 8px 5px 0; vertical-align: middle; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+td input[type=number] { min-width: 6.5rem; } td input[type=text] { min-width: 11rem; }
+
+.slider { display: grid; gap: 2px; margin-bottom: 14px; }
+.slider .h { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; font-weight: 600; }
+.slider output { font-variant-numeric: tabular-nums; color: var(--accent); }
+svg.chart { width: 100%; height: auto; display: block; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 0.85rem; margin-top: 6px; }
+.legend i { display: inline-block; width: 22px; border-top: 3px solid var(--dim); vertical-align: middle; margin-right: 6px; }
+.legend i.sc { border-top-color: var(--accent); } .legend i.ba { border-top-style: dashed; }
+
+.subtabs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 22px; }
+.subtabs button { border: 1px solid var(--line); background: none; border-radius: 99px; padding: 6px 14px; cursor: pointer; color: var(--dim); }
+.subtabs button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); font-weight: 600; }
+.pill { display: inline-block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 99px; padding: 1px 8px; white-space: nowrap; }
+.steps { margin: 8px 0 0; padding-left: 20px; font-size: 0.92rem; }
+.item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; padding: 14px 0; border-top: 1px solid var(--line); }
+.item:first-child { border-top: 0; padding-top: 0; }
+.item.done h3 { text-decoration: line-through; color: var(--dim); }
+.dots { display: inline-flex; gap: 4px; vertical-align: middle; }
+.dots i { width: 22px; height: 8px; border-radius: 99px; background: var(--soft); }
+.dots i.on { background: var(--good); }
+textarea.kit { min-height: 96px; font-size: 0.95rem; line-height: 1.5; }
+.hero { padding: 36px 0 8px; }
+.modules { counter-reset: m; }
+.modules .card b { display: block; font-family: var(--serif); font-size: 1.1rem; margin: 2px 0 4px; }
+footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--dim); font-size: 0.85rem; }
+
+@media print {
+  header.top nav, .noprint, footer { display: none !important; }
+  body { background: #fff; color: #000; font-size: 12pt; }
+  .card { border-color: #bbb; break-inside: avoid; background: #fff; }
+  main { padding: 0; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <b>ARC <span>MISSION</span></b>
+      <span class="small dim">Technology for a greater purpose</span>
+    </div>
+    <nav class="tabs" id="tabs" aria-label="Modules"></nav>
+  </div>
+</header>
+<main><div class="wrap" id="view"></div></main>
+<footer><div class="wrap">
+  <p><strong>Your data stays on this device.</strong> ARC Mission runs entirely in this browser tab: no account, no server, no network requests. Use <em>Organization → Export</em> to keep a copy.</p>
+  <p style="margin-top:6px">A prototype by ARC Labs, part of ARC Transformation Group. Scores use stated rules of thumb, not sector benchmarks, and are a starting point for a conversation — not financial advice.</p>
+</div></footer>
+
+<script src="catalog.js"></script>
+<script src="model.js"></script>
+<script>
+(function () {
+  'use strict'
+  const M = window.ArcMission
+  const KEY = 'arc-mission.org.v1'
+  const TABS = [
+    { id: 'intelligence', n: '01', label: 'Intelligence' },
+    { id: 'simulator', n: '02', label: 'Simulator' },
+    { id: 'funding', n: '03', label: 'Funding' },
+    { id: 'reach', n: '04', label: 'Reach' },
+    { id: 'outcomes', n: '05', label: 'Outcomes' },
+    { id: 'transform', n: '', label: 'Transformation' },
+    { id: 'org', n: '', label: 'Organization' },
+    { id: 'report', n: '', label: 'Report' },
+  ]
+  const STAGES = ['Researching', 'In conversation', 'Applied', 'Won', 'Declined']
+
+  let org = load()
+  let tab = org ? 'intelligence' : 'welcome'
+  const C = window.ArcMissionCatalog || { checked: '', PROGRAMS: [], SOURCES: [] }
+  const sub = { funding: 'eligible', transform: 'assess' }
+  let funderQuestion = ''
+  let scenario = Object.assign({}, M.DEFAULT_SCENARIO)
+  let storageOk = true
+
+  function load() {
+    try { const raw = localStorage.getItem(KEY); return raw ? Object.assign(M.blankOrg(), JSON.parse(raw)) : null }
+    catch (e) { storageOk = false; return null }
+  }
+  function save() {
+    try { if (org) localStorage.setItem(KEY, JSON.stringify(org)); else localStorage.removeItem(KEY) }
+    catch (e) { storageOk = false }
+  }
+
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+  const money = (v) => {
+    const n = Math.round(Number(v) || 0)
+    return (n < 0 ? '−' : '') + esc(org && org.currency || '$') + Math.abs(n).toLocaleString('en-US')
+  }
+  const pct = (v) => (v == null ? '—' : Math.round(v * 100) + '%')
+  const tone = (score) => (score == null ? '' : score >= 70 ? 'c-good' : score >= 40 ? 'c-mid' : 'c-bad')
+  const today = () => new Date().toISOString().slice(0, 10)
+  const setPath = (obj, path, value) => {
+    const keys = path.split('.')
+    let o = obj
+    for (let i = 0; i < keys.length - 1; i++) o = o[keys[i]] == null ? (o[keys[i]] = {}) : o[keys[i]]
+    o[keys[keys.length - 1]] = value
+  }
+  const getPath = (obj, path) => path.split('.').reduce((o, k) => (o == null ? o : o[k]), obj)
+
+  // ── Inputs bound to the organization by data-bind="path" ────────────────
+  const text = (path, attrs) => `<input type="text" data-bind="${path}" value="${esc(getPath(org, path))}" ${attrs || ''}>`
+  const number = (path, attrs) => `<input type="number" inputmode="decimal" data-bind="${path}" value="${esc(getPath(org, path) || '')}" placeholder="0" ${attrs || ''}>`
+  const select = (path, options, label) => `<select data-bind="${path}" aria-label="${esc(label)}">${options.map((o) => `<option${getPath(org, path) === o ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`
+
+  // ── Views ───────────────────────────────────────────────────────────────
+  function welcome() {
+    const mods = [
+      ['01', 'Mission Intelligence', 'See organizational health, financial vulnerabilities and where the opportunities are.'],
+      ['02', 'Mission Simulator', 'Model how funding changes, hires and automation affect runway and service capacity.'],
+      ['03', 'Mission Funding', 'Find the kinds of grants, sponsors, credits and resources that fit, and track your pipeline.'],
+      ['04', 'Mission Reach', 'Check how easily people who need you — and people who would fund you — can find and support you.'],
+      ['05', 'Mission Outcomes', 'Track what is improving and generate an evidence-backed impact report.'],
+    ]
+    return `
+      <section class="hero">
+        <p class="eyebrow">By ARC Transformation Group</p>
+        <h1 style="margin-top:10px">Technology for a greater purpose.</h1>
+        <p class="lede">Helping mission-driven organizations become more sustainable, resilient, visible and capable of serving humanity. Answer a few questions about your organization and get a plain-language picture of where it stands.</p>
+        <div class="row" style="margin-top:22px">
+          <button class="btn primary" data-act="start">Start with your organization</button>
+          <button class="btn" data-act="sample">Explore a sample organization</button>
+        </div>
+        <p class="small dim" style="margin-top:12px">About ten minutes. Nothing you enter leaves this device.</p>
+      </section>
+      <section class="section modules">
+        <h2>One platform, five modules</h2>
+        <div class="grid g3">${mods.map((m) => `<div class="card"><span class="eyebrow">${m[0]}</span><b>${m[1]}</b><p class="small dim">${m[2]}</p></div>`).join('')}</div>
+      </section>`
+  }
+
+  function banner() {
+    const bits = []
+    if (org.sample) bits.push(`<div class="banner noprint"><span><strong>Sample organization.</strong> ${esc(org.name)} is fictional and every figure is invented.</span><button class="btn" data-act="start">Start with your own</button></div>`)
+    if (!storageOk) bits.push(`<div class="banner noprint"><span><strong>This browser is blocking storage.</strong> Your entries will be lost when the tab closes — export a copy from Organization.</span></div>`)
+    return bits.join('')
+  }
+
+  function needData(what) {
+    return `<div class="card"><h3>Not enough to go on yet</h3><p class="dim" style="margin:6px 0 14px">${what}</p><button class="btn primary" data-go="org">Enter organization details</button></div>`
+  }
+
+  function partValue(p) {
+    if (p.value == null) return 'no data'
+    if (p.id === 'reserves') return (Math.round(p.value * 10) / 10) + ' months of costs'
+    if (p.id === 'diversification') return pct(p.value) + ' from largest source'
+    if (p.id === 'margin') return (p.value >= 0 ? pct(p.value) + ' surplus' : pct(-p.value) + ' deficit')
+    if (p.id === 'recurring') return pct(p.value) + ' repeats next year'
+    if (p.id === 'admin') return pct(p.value) + ' of paid hours'
+    return ''
+  }
+
+  function findingCard(f) {
+    const a = (org.actions || {})[f.id]
+    const label = f.kind === 'risk' ? (f.severity === 3 ? 'Risk · act now' : 'Risk') : 'Opportunity'
+    return `<article class="card finding s${f.severity}">
+      <span class="tag ${f.severity === 3 ? 'c-bad' : f.severity === 2 ? 'c-mid' : 'c-good'}">${label}</span>
+      <h3>${esc(f.title)}</h3>
+      <p>${esc(f.why)}</p>
+      <p class="next"><strong>Next step.</strong> ${esc(f.next)}</p>
+      <div class="row noprint" style="margin-top:12px">
+        <button class="btn ${a ? 'on' : ''}" data-act="acting" data-id="${f.id}" aria-pressed="${a ? 'true' : 'false'}">${a ? '✓ Acting on this since ' + esc(a.since) : 'We’ll act on this'}</button>
+        <button class="btn quiet" data-go="${f.module}">Open ${f.module === 'simulator' ? 'Simulator' : f.module === 'funding' ? 'Funding' : f.module === 'reach' ? 'Reach' : 'Outcomes'} →</button>
+      </div>
+    </article>`
+  }
+
+  function intelligence() {
+    const m = M.metrics(org), h = M.health(org), f = M.findings(org)
+    if (h.score === null) return head('01 · Mission Intelligence', 'Where the organization stands') + needData('Add income, costs and reserves and this page will show organizational health, the largest risks and the clearest opportunities.')
+    return head('01 · Mission Intelligence', org.name ? esc(org.name) : 'Where the organization stands', org.mission) + `
+      <div class="grid g-side section" style="margin-top:24px">
+        <div class="card">
+          <p class="eyebrow">Organizational health</p>
+          <div class="score" style="margin-top:8px">
+            <span class="big ${tone(h.score)}">${h.score}</span>
+            <span><span class="band ${tone(h.score)}">${h.band}</span><br><span class="small dim">out of 100${h.complete ? '' : ' · some areas have no data yet'}</span></span>
+          </div>
+          <p class="small dim" style="margin-top:12px">A weighted reading of six areas. It summarises; the findings below are what to act on.</p>
+        </div>
+        <div class="card bars">
+          ${h.parts.map((p) => `<div class="bar ${tone(p.score)}" title="${esc(partValue(p))}">
+            <span style="color:var(--ink)">${p.label}<br><span class="small dim">${esc(partValue(p))}</span></span>
+            <span class="track" role="img" aria-label="${p.label}: ${p.score == null ? 'no data' : p.score + ' out of 100'}"><i style="width:${p.score || 0}%"></i></span>
+            <span class="v">${p.score == null ? '—' : p.score}</span></div>`).join('')}
+        </div>
+      </div>
+      <div class="grid g3" style="margin-top:16px">
+        <div class="card stat"><b>${money(m.revenue)}</b><span>Annual income from ${m.sourceCount} source${m.sourceCount === 1 ? '' : 's'}</span></div>
+        <div class="card stat"><b>${money(m.expenses)}</b><span>Annual costs · ${pct(m.programShare)} on programs</span></div>
+        <div class="card stat"><b>${m.costPerPerson == null ? '—' : money(m.costPerPerson)}</b><span>Cost per person served</span></div>
+      </div>
+      <section class="section">
+        <h2>What to pay attention to</h2>
+        ${f.length ? `<div class="grid g2">${f.map(findingCard).join('')}</div>` : '<div class="card"><p>No risks or gaps stand out from what has been entered.</p></div>'}
+      </section>`
+  }
+
+  function head(eyebrow, title, lede) {
+    return banner() + `<p class="eyebrow">${eyebrow}</p><h1 style="margin-top:8px">${title}</h1>${lede ? `<p class="lede">${esc(lede)}</p>` : ''}`
+  }
+
+  function slider(key, label, min, max, step, fmt) {
+    return `<div class="slider"><div class="h"><label for="s-${key}">${label}</label><output id="o-${key}">${fmt(scenario[key])}</output></div>
+      <input type="range" id="s-${key}" data-scn="${key}" min="${min}" max="${max}" step="${step}" value="${scenario[key]}"></div>`
+  }
+  const SLIDER_FMT = {
+    revenueChangePct: (v) => (v > 0 ? '+' : '') + v + '%',
+    expenseChangePct: (v) => (v > 0 ? '+' : '') + v + '%',
+    newFunding: (v) => money(v) + ' / yr',
+    newHires: (v) => v + ' FTE',
+    costPerHire: (v) => money(v),
+    hoursAutomated: (v) => v + ' hrs / wk',
+    toolCost: (v) => money(v) + ' / yr',
+  }
+
+  function simulator() {
+    const m = M.metrics(org)
+    if (m.expenses === 0) return head('02 · Mission Simulator', 'What if?') + needData('The Simulator needs annual income, costs and reserves to project from.')
+    const round = (v, to) => Math.max(to, Math.ceil(v / to) * to)
+    const maxFund = round(m.revenue * 0.5, 10000)
+    const pipe = M.pipelineTotals(org)
+    return head('02 · Mission Simulator', 'What if?', 'Change one thing and see what it does to cash, runway and the number of people you can serve over the next two years.') + `
+      <div class="grid g-side section" style="margin-top:24px">
+        <div class="card">
+          <h3 style="margin-bottom:14px">Income</h3>
+          <label class="check"><input type="checkbox" data-scn="loseLargest" ${scenario.loseLargest ? 'checked' : ''}><span>Lose the largest source<br><span class="small dim">${m.largest ? esc(m.largest.source || 'Largest source') + ' · ' + money(m.largest.amount) : 'none entered'}</span></span></label>
+          <label class="check"><input type="checkbox" data-scn="includePipeline" ${scenario.includePipeline ? 'checked' : ''}><span>Count the funding pipeline<br><span class="small dim">${pipe.count ? money(pipe.weighted) + ' weighted by likelihood' : 'nothing in the pipeline yet'}</span></span></label>
+          <div style="height:10px"></div>
+          ${slider('revenueChangePct', 'Other income changes by', -50, 50, 5, SLIDER_FMT.revenueChangePct)}
+          ${slider('newFunding', 'New funding secured', 0, maxFund, 5000, SLIDER_FMT.newFunding)}
+          <h3 style="margin:18px 0 14px">Costs and capacity</h3>
+          ${slider('expenseChangePct', 'Costs change by', -30, 30, 5, SLIDER_FMT.expenseChangePct)}
+          ${slider('newHires', 'New program staff', 0, 5, 0.5, SLIDER_FMT.newHires)}
+          ${slider('costPerHire', 'Cost per new hire', 20000, 120000, 5000, SLIDER_FMT.costPerHire)}
+          ${slider('hoursAutomated', 'Admin hours automated', 0, Math.max(5, Math.round(org.adminHoursPerWeek || 0)), 1, SLIDER_FMT.hoursAutomated)}
+          ${slider('toolCost', 'Cost of the tools to do it', 0, 20000, 500, SLIDER_FMT.toolCost)}
+          <button class="btn noprint" data-act="reset-scn">Reset scenario</button>
+        </div>
+        <div id="sim-out"></div>
+      </div>`
+  }
+
+  function simOut() {
+    const s = M.simulate(org, scenario, 24)
+    const all = s.baseline.cash.concat(s.scenario.cash)
+    const lo = Math.min(0, ...all), hi = Math.max(1, ...all)
+    const W = 640, H = 300, L = 8, R = 8, T = 16, B = 30
+    const x = (i) => L + (i / s.months) * (W - L - R)
+    const y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B)
+    const line = (arr) => arr.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ')
+    const when = (z) => (z === null ? 'Cash lasts beyond two years' : `Cash runs out in month ${z}`)
+    const sc = s.scenario, ba = s.baseline
+    const changed = JSON.stringify(sc.cash) !== JSON.stringify(ba.cash) || s.hoursFreedPerYear > 0
+    const served = Number(org.peopleServed) || 0
+    return `
+      <div class="grid g3">
+        <div class="card stat"><b class="${sc.net >= 0 ? 'c-good' : 'c-bad'}">${money(sc.net)}</b><span>Annual result${changed ? ' · was ' + money(ba.net) : ''}</span></div>
+        <div class="card stat"><b class="${sc.zeroMonth === null ? 'c-good' : 'c-bad'}">${sc.zeroMonth === null ? '24+' : sc.zeroMonth} <span style="font-size:1rem;color:inherit">months</span></b><span>${when(sc.zeroMonth)}</span></div>
+        <div class="card stat"><b>${served ? s.peopleServed.toLocaleString('en-US') : '—'}</b><span>People served a year${served && s.peopleServed !== served ? ' · was ' + served.toLocaleString('en-US') : ''}</span></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3>Cash over the next 24 months</h3>
+        <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Cash projection. Current path: ${when(ba.zeroMonth).toLowerCase()}, ending at ${money(ba.cash[24])}. Scenario: ${when(sc.zeroMonth).toLowerCase()}, ending at ${money(sc.cash[24])}.">
+          ${[0, 6, 12, 18, 24].map((i) => `<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H - B}" stroke="var(--line)"/><text x="${x(i)}" y="${H - 8}" font-size="12" fill="var(--dim)" text-anchor="${i === 0 ? 'start' : i === 24 ? 'end' : 'middle'}">${i === 0 ? 'Today' : 'Month ' + i}</text>`).join('')}
+          <line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--ink)" stroke-width="1"/>
+          ${lo < 0 ? `<rect x="${L}" y="${y(0)}" width="${W - L - R}" height="${H - B - y(0)}" fill="var(--bad)" opacity="0.08"/><text x="${L + 6}" y="${Math.min(H - B - 6, y(0) + 16)}" font-size="12" fill="var(--bad)">Out of cash</text>` : ''}
+          <path d="${line(ba.cash)}" fill="none" stroke="var(--dim)" stroke-width="2.5" stroke-dasharray="6 5"/>
+          <path d="${line(sc.cash)}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/>
+          <circle cx="${x(24)}" cy="${y(sc.cash[24])}" r="4" fill="var(--accent)"/>
+        </svg>
+        <div class="legend"><span><i class="sc"></i>This scenario · ends at ${money(sc.cash[24])}</span><span><i class="ba"></i>Current path · ends at ${money(ba.cash[24])}</span></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <table><thead><tr><th></th><th class="num">Current</th><th class="num">Scenario</th></tr></thead><tbody>
+          <tr><td>Annual income</td><td class="num">${money(ba.revenue)}</td><td class="num">${money(sc.revenue)}</td></tr>
+          <tr><td>Annual costs</td><td class="num">${money(ba.expenses)}</td><td class="num">${money(sc.expenses)}</td></tr>
+          <tr><td>Staff hours returned to the mission</td><td class="num">—</td><td class="num">${s.hoursFreedPerYear ? s.hoursFreedPerYear.toLocaleString('en-US') + ' / yr' : '—'}</td></tr>
+        </tbody></table>
+        <p class="small dim" style="margin-top:10px">Assumes income and costs arrive evenly through the year, and that the number of people served moves in proportion to program spending. Both are simplifications.</p>
+      </div>`
+  }
+
+  const subtabs = (key, tabs) => `<div class="subtabs noprint" role="group" aria-label="Sections">${tabs.map(([id, label]) => `<button data-sub="${key}:${id}" aria-pressed="${sub[key] === id}">${label}</button>`).join('')}</div>`
+  const ext = (href, label) => `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)} ↗</a>`
+  const copyBtn = (id) => `<button class="btn noprint" data-act="copy" data-target="${id}">Copy</button>`
+  const profileGap = () => (!org.causeArea || !org.location) ? `<div class="banner noprint"><span>Add your <strong>cause area</strong> and <strong>location</strong> so searches and matches are specific to you.</span><button class="btn" data-go="org">Add them</button></div>` : ''
+
+  function fundingEligible() {
+    const e = M.eligiblePrograms(org, C.PROGRAMS)
+    const claimed = e.eligible.filter((p) => p.claimed).length
+    return `
+      <section class="section" style="margin-top:20px">
+        <div class="grid g3" style="margin-bottom:16px">
+          <div class="card stat"><b class="c-good">${e.eligible.length}</b><span>Programs you likely qualify for</span></div>
+          <div class="card stat"><b>${claimed}</b><span>Already claimed</span></div>
+          <div class="card stat"><b>${e.eligible.length - claimed}</b><span>Still on the table</span></div>
+        </div>
+        <p class="small dim" style="margin-bottom:14px">Based on: ${org.registered ? 'registered' : 'not registered'} · ${esc(org.orgKind)} · ${esc(org.country)}. <button class="btn quiet" data-go="org" style="padding:0 4px">Change</button> Each provider makes the final decision.</p>
+        <div class="grid g2">${e.eligible.map((p) => `<article class="card">
+          <div class="row" style="justify-content:space-between"><span class="eyebrow">${esc(p.provider)}</span>${p.claimed ? '<span class="pill c-good">Claimed</span>' : ''}</div>
+          <h3 style="margin:4px 0 6px">${esc(p.name)}</h3>
+          <p>${esc(p.offer)}</p>
+          ${p.note ? `<p class="small dim" style="margin-top:6px">${esc(p.note)}</p>` : ''}
+          <ol class="steps">${p.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
+          <div class="row" style="margin-top:12px">${ext(p.url, 'Official page')}<label class="check noprint" style="padding:0;margin-left:auto"><input type="checkbox" data-bind="claimed.${p.id}" ${p.claimed ? 'checked' : ''}><span class="small">We have this</span></label></div>
+        </article>`).join('') || '<div class="card"><p class="dim">No programs match the details entered.</p></div>'}</div>
+        ${e.notEligible.length ? `<details style="margin-top:16px"><summary class="dim">${e.notEligible.length} program${e.notEligible.length === 1 ? '' : 's'} that do not appear to fit</summary><ul class="small dim">${e.notEligible.map((p) => `<li><strong>${esc(p.name)}</strong> — ${esc(p.reason)}</li>`).join('')}</ul></details>` : ''}
+        <p class="small dim" style="margin-top:14px">Program terms checked against official pages on ${esc(C.checked)}. They change; confirm on the official page before relying on them.</p>
+      </section>`
+  }
+
+  function fundingFind() {
+    const s = M.grantSearches(org, C.SOURCES)
+    const matches = M.fundingMatches(org)
+    const fit = (n) => (n >= 3 ? ['Strong fit', 'c-good'] : n === 2 ? ['Good fit', 'c-mid'] : ['Worth a look', 'dim'])
+    return `
+      <section class="section" style="margin-top:20px">
+        ${profileGap()}
+        <h2>Search real grant databases</h2>
+        <p class="dim" style="margin:-6px 0 14px;max-width:62ch">ARC Mission does not hold grant listings. These are the places that do${org.causeArea ? `, opened with a search for <strong>${esc(org.causeArea)}</strong> where the site allows it` : ''}.</p>
+        <div class="grid g2">${s.map((x) => `<article class="card"><div class="row" style="justify-content:space-between"><span class="eyebrow">${esc(x.region)}</span><span class="pill ${x.free ? 'c-good' : 'dim'}">${x.free ? 'Free' : 'Paid'}</span></div><h3 style="margin:4px 0 6px">${esc(x.name)}</h3><p>${esc(x.covers)}</p>${x.tip ? `<p class="small dim" style="margin-top:6px">${esc(x.tip.replace('{place}', x.place || 'your area'))}</p>` : ''}<p style="margin-top:10px">${ext(x.href, x.prefilled ? `Search “${x.keywords}”` : 'Open')}</p></article>`).join('') || '<div class="card"><p class="dim">No sources listed for this country yet.</p></div>'}</div>
+        <p class="small dim" style="margin-top:12px">When a search turns up something worth pursuing, add it to your pipeline with its deadline.</p>
+      </section>
+      <section class="section">
+        <h2>Kinds of funding that fit you</h2>
+        <div class="grid g2">${matches.map((f) => `<article class="card"><span class="eyebrow ${fit(f.fit)[1]}">${fit(f.fit)[0]}</span><h3 style="margin:4px 0 6px">${esc(f.name)}</h3><p>${esc(f.what)}</p><p class="small" style="margin-top:8px"><strong>Why you.</strong> ${esc(f.why)}</p></article>`).join('')}</div>
+      </section>`
+  }
+
+  function fundingReady() {
+    const r = M.readiness(org)
+    return `
+      <div class="grid g-side section" style="margin-top:20px">
+        <div class="card" style="align-self:start">
+          <p class="eyebrow">Application readiness</p>
+          <div class="score" style="margin-top:8px"><span class="big ${tone(r.score)}">${r.score}</span><span class="small dim">out of 100</span></div>
+          <p class="small dim" style="margin-top:12px">${r.ready ? 'Everything funders usually ask for is in hand.' : `Gather the ${r.missing.length} missing item${r.missing.length === 1 ? '' : 's'} once, keep them in one folder, and every application gets faster.`}</p>
+        </div>
+        <div class="card"><fieldset style="border:0;padding:0;margin:0"><legend class="eyebrow" style="padding:0;margin-bottom:4px">What funders usually ask for</legend>
+          ${M.READINESS_ITEMS.map((i) => `<label class="check"><input type="checkbox" data-bind="readiness.${i.id}" ${org.readiness[i.id] ? 'checked' : ''}><span><strong>${esc(i.text)}</strong><br><span class="small dim">${esc(i.detail)}</span></span></label>`).join('')}
+        </fieldset></div>
+      </div>`
+  }
+
+  function fundingPipeline() {
+    const p = M.pipelineTotals(org), d = M.deadlines(org, today())
+    const due = (n) => (n < 0 ? `<span class="c-bad">${-n} days overdue</span>` : n === 0 ? '<span class="c-bad">Due today</span>' : `<span class="${n <= 14 ? 'c-bad' : n <= 45 ? 'c-mid' : ''}">${n} days left</span>`)
+    return `
+      <section class="section" style="margin-top:20px">
+        <div class="grid g3" style="margin-bottom:16px">
+          <div class="card stat"><b>${money(p.total)}</b><span>Being pursued across ${p.count} opportunit${p.count === 1 ? 'y' : 'ies'}</span></div>
+          <div class="card stat"><b>${money(p.weighted)}</b><span>Weighted by likelihood</span></div>
+          <div class="card stat"><b class="c-good">${money(p.won)}</b><span>Won</span></div>
+        </div>
+        ${d.length ? `<div class="card" style="margin-bottom:16px"><h3 style="margin-bottom:8px">Next deadlines</h3>${d.slice(0, 4).map((x) => `<div class="row" style="justify-content:space-between;padding:6px 0;border-top:1px solid var(--line)"><span>${esc(x.name || 'Unnamed opportunity')} <span class="dim small">· ${esc(x.deadline)}</span></span><strong>${due(x.days)}</strong></div>`).join('')}</div>` : ''}
+        <div class="card">
+          <div class="tablewrap"><table><thead><tr><th>Opportunity</th><th>Amount</th><th>Stage</th><th>Likelihood %</th><th>Deadline</th><th></th></tr></thead><tbody>
+          ${(org.pipeline || []).map((_, i) => `<tr><td>${text(`pipeline.${i}.name`, 'aria-label="Opportunity name"')}</td><td>${number(`pipeline.${i}.amount`, 'aria-label="Amount" min="0"')}</td><td>${select(`pipeline.${i}.stage`, STAGES, 'Stage')}</td><td>${number(`pipeline.${i}.probability`, 'aria-label="Likelihood percent" min="0" max="100"')}</td><td><input type="date" data-bind="pipeline.${i}.deadline" value="${esc(org.pipeline[i].deadline || '')}" aria-label="Deadline"></td><td><button class="btn quiet noprint" data-act="remove" data-list="pipeline" data-i="${i}" aria-label="Remove opportunity">✕</button></td></tr>`).join('') || '<tr><td colspan="6" class="dim">Nothing yet. Add the first grant, sponsor or resource you are going after.</td></tr>'}
+          </tbody></table></div>
+          <button class="btn noprint" style="margin-top:12px" data-act="add-pipeline">+ Add opportunity</button>
+        </div>
+      </section>`
+  }
+
+  function fundingKit() {
+    const kit = M.applicationKit(org)
+    const words = (s) => (s.trim() ? s.trim().split(/\s+/).length : 0)
+    return `
+      <section class="section" style="margin-top:20px">
+        <div class="card grid g2">
+          <label class="f" style="grid-column:1/-1">The need <small>One or two sentences on the problem you exist to solve. Include a number if you have one.</small><textarea data-bind="needStatement">${esc(org.needStatement)}</textarea></label>
+          <label class="f">Amount you are asking for ${number('askAmount', 'min="0"')}</label>
+          <label class="f">What it would pay for <small>Finish the sentence “…to ___”.</small>${text('askPurpose')}</label>
+        </div>
+      </section>
+      <section class="section">
+        <h2>Your reusable answers</h2>
+        <p class="dim" style="margin:-6px 0 14px;max-width:62ch">Most applications ask the same six questions. These answers are assembled from what you have already entered — every sentence traces back to a number of yours. Copy, then edit in your own voice.</p>
+        <div class="grid">${kit.map((s) => `<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:8px"><h3>${esc(s.title)}</h3>${s.text ? `<span class="row"><span class="small dim">${words(s.text)} words</span>${copyBtn('kit-' + s.id)}</span>` : ''}</div>${s.text ? `<textarea class="kit" id="kit-${s.id}" readonly aria-label="${esc(s.title)}">${esc(s.text)}</textarea>` : `<p class="dim">${esc(s.missing)}</p>`}</div>`).join('')}</div>
+      </section>
+      <section class="section">
+        <h2>Draft a specific answer with AI</h2>
+        <div class="card">
+          <p class="dim" style="max-width:62ch">ARC Mission does not call an AI model. This builds a prompt from your facts that you can paste into the assistant you already use. It instructs the assistant to use only these facts and to say what is missing rather than invent it.</p>
+          <label class="f" style="margin-top:14px">The funder’s question <small>Paste it with the word limit.</small><textarea id="fq" data-local="funderQuestion">${esc(funderQuestion)}</textarea></label>
+          <div class="row" style="justify-content:space-between;margin:14px 0 8px"><h3>Prompt</h3>${copyBtn('ai-prompt')}</div>
+          <textarea class="kit" id="ai-prompt" readonly style="min-height:200px" aria-label="AI prompt">${esc(M.aiPrompt(org, funderQuestion))}</textarea>
+          <p class="small dim" style="margin-top:8px">Pasting this sends your organization’s figures to that AI provider. Leave out anything about named individuals, and check every number in what comes back.</p>
+        </div>
+      </section>`
+  }
+
+  function funding() {
+    const parts = { eligible: fundingEligible, find: fundingFind, ready: fundingReady, pipeline: fundingPipeline, kit: fundingKit }
+    return head('03 · Mission Funding', 'Find it, qualify for it, apply for it', 'What you can claim today, where to search for grants, what funders will ask for, and the answers to give them.') +
+      subtabs('funding', [['eligible', 'Eligible now'], ['find', 'Find grants'], ['ready', 'Get ready'], ['pipeline', 'Pipeline'], ['kit', 'Application kit']]) +
+      (parts[sub.funding] || fundingEligible)()
+  }
+
+  // ── Transformation ──────────────────────────────────────────────────────
+  const eligibleCount = () => M.eligiblePrograms(org, C.PROGRAMS).eligible.filter((p) => !p.claimed).length
+  const dots = (level, max) => `<span class="dots" role="img" aria-label="Level ${level} of ${max}">${Array.from({ length: max }, (_, i) => `<i class="${i < level ? 'on' : ''}"></i>`).join('')}</span>`
+
+  function transformAssess() {
+    const m = M.maturity(org)
+    return `
+      <div class="grid g-side section" style="margin-top:20px">
+        <div class="card" style="align-self:start">
+          <p class="eyebrow">Digital maturity</p>
+          <div class="score" style="margin-top:8px"><span class="big ${tone(m.score)}">${m.score}</span><span class="small dim">out of 100</span></div>
+          <div style="margin-top:16px">${m.areas.map((a) => `<div class="row" style="justify-content:space-between;padding:5px 0;font-size:0.92rem"><span>${a.name}</span>${dots(a.level, a.max)}</div>`).join('')}</div>
+          <p class="small dim" style="margin-top:12px">Digital awareness comes from the Mission Reach checklist.</p>
+          <button class="btn primary noprint" style="margin-top:14px" data-sub="transform:roadmap">See your roadmap</button>
+        </div>
+        <div class="card">
+          <p class="dim" style="margin-bottom:14px">Tick what is true today, across the organization — not what is planned.</p>
+          ${M.MATURITY_AREAS.map((a) => `<fieldset style="border:0;padding:0;margin:0 0 18px"><legend class="eyebrow" style="padding:0;margin-bottom:4px">${a.name}</legend>${a.statements.map((s, i) => `<label class="check"><input type="checkbox" data-bind="maturity.${a.id}-${i + 1}" ${org.maturity[a.id + '-' + (i + 1)] ? 'checked' : ''}><span>${esc(s.text)}</span></label>`).join('')}</fieldset>`).join('')}
+        </div>
+      </div>`
+  }
+
+  function transformTasks() {
+    const a = M.automationPlan(org)
+    const byIndex = Object.fromEntries(a.rows.map((r) => [r.index, r]))
+    return `
+      <section class="section" style="margin-top:20px">
+        <p class="dim" style="max-width:62ch;margin-bottom:14px">List the administrative work that repeats every week. This is where technology most reliably gives time back to the mission.</p>
+        <div class="grid g3" style="margin-bottom:16px">
+          <div class="card stat"><b>${a.hours}</b><span>Hours a week listed</span></div>
+          <div class="card stat"><b class="c-good">${a.recoverable}</b><span>Hours a week that could come back</span></div>
+          <div class="card stat"><b class="c-good">${a.perYear.toLocaleString('en-US')}</b><span>Hours a year</span></div>
+        </div>
+        <div class="card">
+          <div class="tablewrap"><table><thead><tr><th>Task</th><th>Kind</th><th>Hours a week</th><th>Could come back</th><th>How</th><th></th></tr></thead><tbody>
+          ${(org.tasks || []).map((_, i) => { const r = byIndex[i]; return `<tr><td>${text(`tasks.${i}.name`, 'aria-label="Task"')}</td><td>${select(`tasks.${i}.kind`, Object.keys(M.TASK_KINDS), 'Kind of task')}</td><td>${number(`tasks.${i}.hoursPerWeek`, 'aria-label="Hours a week" min="0" step="0.5" style="min-width:5rem"')}</td><td class="c-good" style="white-space:nowrap">${r ? r.recoverable + ' hrs' : '—'}</td><td class="small dim" style="min-width:14rem">${r ? esc(r.approach) : ''}</td><td><button class="btn quiet noprint" data-act="remove" data-list="tasks" data-i="${i}" aria-label="Remove task">✕</button></td></tr>` }).join('') || '<tr><td colspan="6" class="dim">Nothing listed yet. Start with whatever someone retypes every week.</td></tr>'}
+          </tbody></table></div>
+          <div class="row noprint" style="margin-top:12px"><button class="btn" data-act="add-task">+ Add task</button>${a.recoverable > 0 ? `<button class="btn" data-act="sim-automation">Model ${Math.round(a.recoverable)} hours in the Simulator</button>` : ''}</div>
+        </div>
+        <p class="small dim" style="margin-top:12px">“Could come back” applies a fixed share to each kind of task (${Object.entries(M.TASK_KINDS).map(([k, v]) => `${k.toLowerCase()} ${Math.round(v.share * 100)}%`).join(', ')}). These are planning assumptions, not measurements.</p>
+      </section>`
+  }
+
+  function transformRoadmap() {
+    const r = M.roadmap(org, eligibleCount())
+    const effort = { S: 'Days', M: 'Weeks', L: 'A project' }
+    return `
+      <section class="section" style="margin-top:20px">
+        <div class="row" style="justify-content:space-between;margin-bottom:16px"><p class="dim" style="max-width:56ch">Your next steps from every module, in the order to do them: quick wins first. ${r.done} of ${r.total} done.</p><button class="btn noprint" data-act="print">Print or save as PDF</button></div>
+        ${r.total ? r.phases.filter((p) => p.items.length).map((p) => `<div class="card" style="margin-bottom:16px"><p class="eyebrow" style="margin-bottom:12px">${p.label}</p>${p.items.map((i) => `<div class="item ${i.status === 'done' ? 'done' : ''}">
+            <div><span class="small dim">${esc(i.area)} · ${effort[i.effort]}</span> ${i.help === 'arc' ? '<span class="pill c-mid">ARC can help</span>' : '<span class="pill dim">Do it yourself</span>'}<h3 style="margin:4px 0">${esc(i.title)}</h3><p class="small">${esc(i.how)}</p></div>
+            <select data-plan="${i.id}" aria-label="Status of: ${esc(i.title)}" class="noprint" style="width:auto"><option value="todo"${i.status === 'todo' ? ' selected' : ''}>To do</option><option value="doing"${i.status === 'doing' ? ' selected' : ''}>In progress</option><option value="done"${i.status === 'done' ? ' selected' : ''}>Done</option></select>
+          </div>`).join('')}</div>`).join('') : '<div class="card"><p class="dim">Complete the assessment and the roadmap builds itself.</p></div>'}
+      </section>`
+  }
+
+  function transformHelp() {
+    const r = M.roadmap(org, eligibleCount())
+    const services = [['Digital strategy', 'Technology assessment and transformation roadmap'], ['Digital experience', 'Websites, donation journeys and accessibility'], ['AI transformation', 'Responsible AI implementation'], ['Process automation', 'Reduced administrative workloads'], ['Data transformation', 'Analytics, dashboards and data infrastructure'], ['Financial intelligence', 'Sustainability modeling and scenario planning'], ['Digital awareness', 'Discoverability and supporter engagement'], ['Technology governance', 'Security, privacy and responsible technology adoption']]
+    return `
+      <section class="section" style="margin-top:20px">
+        <div class="grid g2">
+          <div class="card">
+            <h3>What ARC does alongside you</h3>
+            <p class="dim small" style="margin:6px 0 10px">The platform finds the work. ARC Transformation Group’s nonprofit practice helps do it, and the results come back here as outcomes.</p>
+            <table><tbody>${services.map((s) => `<tr><td><strong>${s[0]}</strong></td><td class="small dim">${s[1]}</td></tr>`).join('')}</tbody></table>
+          </div>
+          <div class="card">
+            <div class="row" style="justify-content:space-between;margin-bottom:8px"><h3>Your brief</h3>${copyBtn('brief')}</div>
+            <p class="dim small" style="margin-bottom:10px">${r.arc.length ? `${r.arc.length} step${r.arc.length === 1 ? '' : 's'} on your roadmap are ones ARC can help with.` : 'Complete the assessment to fill this in.'} Copy this and send it to your ARC contact — it tells them where you are without a discovery call.</p>
+            <textarea class="kit" id="brief" readonly style="min-height:320px" aria-label="Brief for ARC">${esc(M.helpBrief(org, eligibleCount()))}</textarea>
+            <p class="small dim" style="margin-top:8px">Nothing is sent from this page. You choose who sees it.</p>
+          </div>
+        </div>
+      </section>`
+  }
+
+  function transform() {
+    const parts = { assess: transformAssess, tasks: transformTasks, roadmap: transformRoadmap, help: transformHelp }
+    return head('Transformation', 'From knowing to doing', 'Where the organization stands digitally, the admin work that could be given back to the mission, and a 90-day plan to get there.') +
+      subtabs('transform', [['assess', 'Assessment'], ['tasks', 'Admin work'], ['roadmap', '90-day roadmap'], ['help', 'Get help']]) +
+      (parts[sub.transform] || transformAssess)()
+  }
+
+  function reach() {
+    const r = M.reachScore(org)
+    const groups = [...new Set(M.REACH_ITEMS.map((i) => i.group))]
+    return head('04 · Mission Reach', 'Can people find and support you?', 'Tick what is true today. Be strict — the gaps are the useful part.') + `
+      <div class="grid g-side section" style="margin-top:24px">
+        <div>
+          <div class="card">
+            <p class="eyebrow">Digital reach</p>
+            <div class="score" style="margin-top:8px"><span class="big ${tone(r.score)}">${r.score}</span><span class="small dim">out of 100</span></div>
+            <div class="bars" style="margin-top:16px">${groups.map((g) => { const sc = Math.round((r.groups[g].got / r.groups[g].total) * 100); return `<div class="bar ${tone(sc)}" style="grid-template-columns:7.5rem 1fr 2.4rem"><span style="color:var(--ink)">${g}</span><span class="track"><i style="width:${sc}%"></i></span><span class="v">${sc}</span></div>` }).join('')}</div>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <h3>Fix these first</h3>
+            ${r.fixes.length ? `<ol style="margin:10px 0 0;padding-left:20px">${r.fixes.slice(0, 3).map((f) => `<li style="margin-bottom:8px">${esc(f.fix)}</li>`).join('')}</ol>` : '<p class="dim" style="margin-top:8px">Everything on the list is in place.</p>'}
+          </div>
+        </div>
+        <div class="card">
+          ${groups.map((g) => `<fieldset style="border:0;padding:0;margin:0 0 18px"><legend class="eyebrow" style="padding:0;margin-bottom:4px">${g}</legend>
+            ${M.REACH_ITEMS.filter((i) => i.group === g).map((i) => `<label class="check"><input type="checkbox" data-reach="${i.id}" ${org.reach[i.id] ? 'checked' : ''}><span>${esc(i.text)}</span></label>`).join('')}</fieldset>`).join('')}
+        </div>
+      </div>`
+  }
+
+  function outcomeRows(editable) {
+    return (org.outcomes || []).map((o, i) => {
+      const p = M.outcomeProgress(o)
+      const delta = (p.change > 0 ? '+' : '') + (Math.round(p.change * 10) / 10) + (p.changePct == null ? '' : ' (' + (p.changePct > 0 ? '+' : '') + Math.round(p.changePct * 100) + '%)')
+      const bar = `<span class="track" style="min-width:70px" role="img" aria-label="${p.toTarget == null ? 'no target' : Math.round(p.toTarget * 100) + '% of the way to target'}"><i style="width:${Math.round((p.toTarget || 0) * 100)}%"></i></span>`
+      if (!editable) return `<tr><td>${esc(o.name)}</td><td class="num">${esc(o.baseline)}</td><td class="num"><strong>${esc(o.current)}</strong> ${esc(o.unit)}</td><td class="num ${p.improved ? 'c-good' : 'dim'}">${delta}</td><td class="num">${esc(o.target)}</td></tr>`
+      return `<tr><td>${text(`outcomes.${i}.name`, 'aria-label="Indicator"')}</td><td>${text(`outcomes.${i}.unit`, 'aria-label="Unit" style="min-width:5rem"')}</td><td>${number(`outcomes.${i}.baseline`, 'aria-label="Starting value"')}</td><td>${number(`outcomes.${i}.current`, 'aria-label="Value now"')}</td><td>${number(`outcomes.${i}.target`, 'aria-label="Target"')}</td><td class="${p.improved ? 'c-good' : 'dim'}" style="white-space:nowrap">${delta}<br>${bar}</td><td><button class="btn quiet" data-act="remove" data-list="outcomes" data-i="${i}" aria-label="Remove indicator">✕</button></td></tr>`
+    }).join('')
+  }
+
+  function outcomes() {
+    const has = (org.outcomes || []).length
+    return head('05 · Mission Outcomes', 'What is changing because of the work', 'Choose a few indicators that matter, record where each one started and where it stands now. Three good ones beat thirty.') + `
+      <section class="section" style="margin-top:24px"><div class="card">
+        <div class="tablewrap"><table><thead><tr><th>Indicator</th><th>Unit</th><th>Started at</th><th>Now</th><th>Target</th><th>Change</th><th></th></tr></thead><tbody>
+        ${outcomeRows(true) || '<tr><td colspan="7" class="dim">No indicators yet. Start with the number you already report most often.</td></tr>'}
+        </tbody></table></div>
+        <div class="row" style="margin-top:12px"><button class="btn" data-act="add-outcome">+ Add indicator</button>${has ? '<button class="btn primary" data-go="report">Generate impact report</button>' : ''}</div>
+      </div></section>`
+  }
+
+  function orgView() {
+    const m = M.metrics(org)
+    return head('Organization', 'About the organization', 'Round numbers are fine. Use the last full financial year.') + `
+      <section class="section" style="margin-top:24px"><div class="card grid g2">
+        <label class="f">Name ${text('name', 'autocomplete="organization"')}</label>
+        <label class="f">Currency symbol ${text('currency', 'maxlength="4" style="max-width:6rem"')}</label>
+        <label class="f" style="grid-column:1/-1">Mission <small>One sentence: who you serve and what you do.</small><textarea data-bind="mission">${esc(org.mission)}</textarea></label>
+        <label class="f">Country ${select('country', M.COUNTRIES, 'Country')}</label>
+        <label class="f">City or region <small>Where you work.</small>${text('location')}</label>
+        <label class="f">Cause area <small>Used to search for grants.</small><input type="text" data-bind="causeArea" value="${esc(org.causeArea)}" list="causes"><datalist id="causes">${M.CAUSES.map((c) => `<option value="${esc(c)}">`).join('')}</datalist></label>
+        <label class="f">Kind of organization <small>Some programs exclude schools, hospitals and government bodies.</small>${select('orgKind', M.ORG_KINDS, 'Kind of organization')}</label>
+        <label class="check" style="grid-column:1/-1"><input type="checkbox" data-bind="registered" ${org.registered ? 'checked' : ''}><span>Registered as a charity or nonprofit<br><span class="small dim">Most technology donation programs require this.</span></span></label>
+      </div></section>
+      <section class="section"><h2>Income</h2><div class="card">
+        <div class="tablewrap"><table><thead><tr><th>Source</th><th>Type</th><th>Amount a year</th><th>Repeats next year?</th><th></th></tr></thead><tbody>
+        ${(org.revenue || []).map((r, i) => `<tr><td>${text(`revenue.${i}.source`, 'aria-label="Source name"')}</td><td>${select(`revenue.${i}.type`, M.SOURCE_TYPES, 'Type')}</td><td>${number(`revenue.${i}.amount`, 'aria-label="Amount a year" min="0"')}</td><td><input type="checkbox" data-bind="revenue.${i}.recurring" aria-label="Repeats next year" ${r.recurring ? 'checked' : ''}></td><td><button class="btn quiet" data-act="remove" data-list="revenue" data-i="${i}" aria-label="Remove source">✕</button></td></tr>`).join('') || '<tr><td colspan="5" class="dim">Add each source of income: every grant, contract, event and donor group.</td></tr>'}
+        </tbody></table></div>
+        <div class="row" style="margin-top:12px;justify-content:space-between"><button class="btn" data-act="add-revenue">+ Add income source</button><strong>Total ${money(m.revenue)}</strong></div>
+      </div></section>
+      <section class="section"><h2>Costs and reserves</h2><div class="card grid g2">
+        <label class="f">Program costs a year <small>Delivering the mission directly.</small>${number('expenses.program', 'min="0"')}</label>
+        <label class="f">Administration costs a year <small>Finance, HR, office, systems.</small>${number('expenses.admin', 'min="0"')}</label>
+        <label class="f">Fundraising costs a year ${number('expenses.fundraising', 'min="0"')}</label>
+        <label class="f">Unrestricted reserves <small>Cash you could spend on anything tomorrow.</small>${number('reserves', 'min="0"')}</label>
+      </div></section>
+      <section class="section"><h2>People</h2><div class="card grid g2">
+        <label class="f">Paid staff <small>Full-time equivalents.</small>${number('staffFte', 'min="0" step="0.5"')}</label>
+        <label class="f">Regular volunteers ${number('volunteers', 'min="0"')}</label>
+        <label class="f">Staff hours a week on administration <small>Across everyone: data entry, scheduling, reports, receipts.</small>${number('adminHoursPerWeek', 'min="0"')}</label>
+        <label class="f">People served a year ${number('peopleServed', 'min="0"')}</label>
+      </div></section>
+      <section class="section noprint"><h2>Your data</h2><div class="card">
+        <p class="dim">Everything above is stored only in this browser. Export a file to keep a copy, move to another device, or share it with someone helping you.</p>
+        <div class="row" style="margin-top:12px">
+          <button class="btn primary" data-go="intelligence">See the results</button>
+          <button class="btn" data-act="export">Export</button>
+          <label class="btn">Import<input type="file" id="import" accept="application/json,.json" hidden></label>
+          <button class="btn quiet" data-act="erase">Erase everything</button>
+        </div>
+      </div></section>`
+  }
+
+  function report() {
+    const m = M.metrics(org), h = M.health(org), f = M.findings(org)
+    const acting = f.filter((x) => (org.actions || {})[x.id])
+    const p = M.pipelineTotals(org)
+    return banner() + `
+      <div class="row noprint" style="justify-content:space-between;margin-bottom:20px"><p class="dim">A one-page summary for a board, a funder or a team meeting.</p><button class="btn primary" data-act="print">Print or save as PDF</button></div>
+      <p class="eyebrow">Mission report · ${today()}</p>
+      <h1 style="margin-top:8px">${esc(org.name || 'Our organization')}</h1>
+      ${org.mission ? `<p class="lede">${esc(org.mission)}</p>` : ''}
+      <div class="grid g3 section" style="margin-top:24px">
+        <div class="card stat"><b>${org.peopleServed ? Number(org.peopleServed).toLocaleString('en-US') : '—'}</b><span>People served a year</span></div>
+        <div class="card stat"><b>${pct(m.programShare)}</b><span>Of spending goes to programs</span></div>
+        <div class="card stat"><b>${h.score == null ? '—' : h.score + ' / 100'}</b><span>Organizational health${h.score == null ? '' : ' · ' + h.band}</span></div>
+      </div>
+      ${(org.outcomes || []).length ? `<section class="section"><h2>What changed</h2><div class="card"><div class="tablewrap"><table><thead><tr><th>Indicator</th><th class="num">Started at</th><th class="num">Now</th><th class="num">Change</th><th class="num">Target</th></tr></thead><tbody>${outcomeRows(false)}</tbody></table></div></div></section>` : ''}
+      <section class="section"><h2>Sustainability</h2><div class="card"><table><tbody>
+        <tr><td>Annual income</td><td class="num">${money(m.revenue)}</td></tr>
+        <tr><td>Annual costs</td><td class="num">${money(m.expenses)}</td></tr>
+        <tr><td>Reserves</td><td class="num">${money(org.reserves)}${m.runwayMonths == null ? '' : ' · ' + (Math.round(m.runwayMonths * 10) / 10) + ' months of costs'}</td></tr>
+        <tr><td>Largest single source of income</td><td class="num">${pct(m.largestShare)}</td></tr>
+        <tr><td>Funding being pursued</td><td class="num">${money(p.total)}</td></tr>
+      </tbody></table></div></section>
+      <section class="section"><h2>${acting.length ? 'What we are acting on' : 'What needs attention'}</h2>
+        <div class="grid g2">${(acting.length ? acting : f.slice(0, 4)).map((x) => `<div class="card finding s${x.severity}"><h3>${esc(x.title)}</h3><p style="margin-top:6px">${esc(x.why)}</p><p class="next"><strong>${acting.length ? 'In progress since ' + esc(org.actions[x.id].since) + '.' : 'Next step.'}</strong> ${esc(x.next)}</p></div>`).join('') || '<div class="card"><p class="dim">Nothing flagged.</p></div>'}</div>
+      </section>
+      <p class="small dim" style="margin-top:24px">Prepared with ARC Mission from figures supplied by the organization. Health scores use stated rules of thumb, not sector benchmarks.</p>`
+  }
+
+  const VIEWS = { welcome, intelligence, simulator, funding, reach, outcomes, transform, org: orgView, report }
+
+  function render() {
+    document.getElementById('tabs').innerHTML = org
+      ? TABS.map((t) => `<button data-go="${t.id}" ${t.id === tab ? 'aria-current="page"' : ''}>${t.n ? `<span class="n">${t.n}</span>` : ''}${t.label}</button>`).join('')
+      : ''
+    document.getElementById('view').innerHTML = VIEWS[org ? tab : 'welcome']()
+    if (org && tab === 'simulator' && document.getElementById('sim-out')) document.getElementById('sim-out').innerHTML = simOut()
+    document.title = org && org.name ? org.name + ' · ARC Mission' : 'ARC Mission'
+  }
+  function go(t) { tab = t; render(); window.scrollTo(0, 0) }
+
+  // ── Events ──────────────────────────────────────────────────────────────
+  const ACTIONS = {
+    start() { org = M.blankOrg(); save(); go('org') },
+    sample() { org = M.sampleOrg(); save(); go('intelligence') },
+    acting(el) {
+      org.actions = org.actions || {}
+      if (org.actions[el.dataset.id]) delete org.actions[el.dataset.id]
+      else org.actions[el.dataset.id] = { since: today() }
+      save(); render()
+    },
+    'add-revenue'() { org.revenue.push({ source: '', type: 'Grant', amount: 0, recurring: false }); save(); render() },
+    'add-pipeline'() { org.pipeline.push({ name: '', amount: 0, stage: 'Researching', probability: 25, deadline: '' }); save(); render() },
+    'add-task'() { org.tasks.push({ name: '', hoursPerWeek: 0, kind: 'Data entry' }); save(); render() },
+    'sim-automation'() { scenario.hoursAutomated = Math.min(Math.round(M.automationPlan(org).recoverable), Math.round(org.adminHoursPerWeek || 0) || Math.round(M.automationPlan(org).recoverable)); go('simulator') },
+    copy(el) {
+      const ta = document.getElementById(el.dataset.target)
+      if (!ta) return
+      const done = () => { el.textContent = 'Copied'; setTimeout(() => { el.textContent = 'Copy' }, 1500) }
+      const fallback = () => { ta.focus(); ta.select(); try { document.execCommand('copy'); done() } catch (e) { el.textContent = 'Select and copy' } }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(done, fallback)
+      else fallback()
+    },
+    'add-outcome'() { org.outcomes.push({ name: '', unit: '', baseline: 0, current: 0, target: 0 }); save(); render() },
+    remove(el) { org[el.dataset.list].splice(Number(el.dataset.i), 1); save(); render() },
+    'reset-scn'() { scenario = Object.assign({}, M.DEFAULT_SCENARIO); render() },
+    print() { window.print() },
+    export() {
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(org, null, 2)], { type: 'application/json' }))
+      a.download = (org.name || 'organization').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-arc-mission.json'
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+    },
+    erase() { if (confirm('Erase everything entered on this device? This cannot be undone.')) { org = null; save(); go('welcome') } },
+  }
+
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-go], [data-act], [data-sub]')
+    if (!el) return
+    if (el.dataset.sub) { const [k, v] = el.dataset.sub.split(':'); sub[k] = v; return render() }
+    if (el.dataset.go) return go(el.dataset.go)
+    if (ACTIONS[el.dataset.act]) ACTIONS[el.dataset.act](el)
+  })
+
+  document.addEventListener('change', (e) => {
+    const el = e.target
+    if (el.id === 'import') {
+      const file = el.files[0]
+      if (!file) return
+      file.text().then((t) => {
+        const data = JSON.parse(t)
+        if (!data || typeof data !== 'object' || !Array.isArray(data.revenue) || !data.expenses) throw new Error('shape')
+        org = Object.assign(M.blankOrg(), data); save(); go('intelligence')
+      }).catch(() => alert('That file is not an ARC Mission export.'))
+      return
+    }
+    if (!org) return
+    if (el.dataset.local === 'funderQuestion') { funderQuestion = el.value; return render() }
+    if (el.dataset.plan) { org.plan[el.dataset.plan] = el.value; save(); return render() }
+    if (el.dataset.bind) {
+      const v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? (el.value === '' ? 0 : Number(el.value)) : el.value
+      setPath(org, el.dataset.bind, v)
+      if (org.sample && el.dataset.bind === 'name') org.sample = false
+      save(); render()
+    } else if (el.dataset.reach) {
+      org.reach[el.dataset.reach] = el.checked
+      save(); render()
+    }
+  })
+
+  document.addEventListener('input', (e) => {
+    const el = e.target
+    if (!el.dataset || !el.dataset.scn) return
+    const k = el.dataset.scn
+    scenario[k] = el.type === 'checkbox' ? el.checked : Number(el.value)
+    const out = document.getElementById('o-' + k)
+    if (out) out.textContent = SLIDER_FMT[k](scenario[k])
+    document.getElementById('sim-out').innerHTML = simOut()
+  })
+
+  render()
+})()
+</script>
+</body>
+</html>
