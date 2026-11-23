@@ -243,4 +243,122 @@ test('application kit only states what was entered', () => {
   assert.ok(!/undefined|NaN/.test(M.helpBrief(org, 3) + M.helpBrief(M.blankOrg(), 0)))
 })
 
+// ── Results: before and after ─────────────────────────────────────────
+const R = (o) => Object.assign(M.blankResult(), { metric: 'Hours a week retyping forms', unit: 'hours', baseline: 9, baselineDate: '2026-09-01', after: 3, afterDate: '2026-11-30' }, o)
+
+test('a result is an estimate unless measured with a stated method', () => {
+  assert.equal(M.resultRecord(R()).label, 'Estimate')
+  assert.equal(M.resultRecord(R({ measured: true })).label, 'Estimate')
+  assert.ok(M.resultRecord(R({ measured: true })).warnings.some((w) => /how it was measured/i.test(w)))
+  assert.equal(M.resultRecord(R({ measured: true, method: 'Timesheet log, 4 weeks each' })).label, 'Measured')
+  assert.equal(M.resultRecord(R({ measured: 'yes', method: 'x' })).label, 'Estimate')
+  assert.equal(M.evidenceLabel({ measured: true }), 'Measured')
+  assert.equal(M.evidenceLabel({}), 'Estimate')
+})
+
+test('a result computes change and days only when complete', () => {
+  const r = M.resultRecord(R())
+  assert.ok(r.complete)
+  assert.equal(r.change, -6)
+  near(r.changePct, -6 / 9)
+  assert.equal(r.days, 90)
+  const zero = M.resultRecord(R({ baseline: 0, after: 5 }))
+  assert.ok(zero.complete)
+  assert.equal(zero.change, 5)
+  assert.equal(zero.changePct, null)
+})
+
+test('incomplete or impossible results are flagged, never crash', () => {
+  const blank = M.resultRecord(M.blankResult())
+  assert.equal(blank.complete, false)
+  assert.equal(blank.problems.length, 5)
+  assert.equal(blank.change, null)
+  assert.equal(blank.baseline, null)
+  assert.equal(M.resultRecord(undefined).complete, false)
+  assert.equal(M.resultRecord(R({ after: '' })).complete, false)
+  assert.equal(M.resultRecord(R({ after: 'abc' })).complete, false)
+  assert.equal(M.resultRecord(R({ afterDate: '2026-13-45' })).complete, false)
+  const backwards = M.resultRecord(R({ afterDate: '2026-08-01' }))
+  assert.equal(backwards.complete, false)
+  assert.ok(backwards.problems.some((p) => /earlier/.test(p)))
+})
+
+test('a case study exists only when permission_to_publish is exactly true', () => {
+  const org = { name: 'Test Org', results: [] }
+  assert.equal(M.caseStudy(org, R()), null)
+  assert.equal(M.caseStudy(org, R({ permission_to_publish: false })), null)
+  assert.equal(M.caseStudy(org, R({ permission_to_publish: 'true' })), null)
+  assert.equal(M.caseStudy(org, R({ permission_to_publish: 1 })), null)
+  assert.equal(M.caseStudy(org, R({ permission_to_publish: true, after: null })), null, 'incomplete records never publish')
+  const c = M.caseStudy(org, R({ permission_to_publish: true, permissionDate: '2026-12-01' }))
+  assert.ok(c)
+  assert.equal(c.permissionDate, '2026-12-01')
+  assert.ok(M.resultRecord(R({ permission_to_publish: true })).warnings.some((w) => /date permission/i.test(w)))
+})
+
+test('case studies label estimates in the text itself', () => {
+  const org = { name: 'Test Org' }
+  const e = M.caseStudy(org, R({ permission_to_publish: true, work: 'Paper forms replaced with an online form' }))
+  assert.equal(e.label, 'Estimate')
+  assert.ok(e.headline.endsWith('(estimate)'))
+  assert.ok(e.body.includes('This figure is an estimate. It was not measured.'))
+  assert.ok(e.body.includes('from 9 hours to 3 hours') && e.body.includes('about 3 months') && e.body.includes('Test Org'))
+  assert.ok(e.body.includes('What changed: Paper forms replaced with an online form.'))
+  const m = M.caseStudy(org, R({ permission_to_publish: true, measured: true, method: 'Timesheet log' }))
+  assert.equal(m.label, 'Measured')
+  assert.ok(!/estimate/i.test(m.headline + m.body))
+  assert.ok(m.body.includes('How it was measured: Timesheet log.'))
+  assert.ok(!/undefined|NaN|null/.test(e.body + m.body + e.headline))
+})
+
+test('results summary counts and the sample publishes only what it may', () => {
+  const s = M.results(org)
+  assert.equal(s.rows.length, 2)
+  assert.equal(s.complete, 2)
+  assert.equal(s.measured, 1)
+  assert.equal(s.publishable, 1)
+  const cases = M.caseStudies(org)
+  assert.equal(cases.length, 1)
+  assert.equal(cases[0].label, 'Estimate')
+  assert.deepEqual(M.caseStudies(M.blankOrg()), [])
+  assert.deepEqual(M.results(M.blankOrg()), { rows: [], complete: 0, measured: 0, publishable: 0 })
+})
+
+test('unmeasured outcomes are labelled as estimates in the application kit', () => {
+  const kit = Object.fromEntries(M.applicationKit(org).map((s) => [s.id, s]))
+  assert.ok(kit.impact.text.includes('(estimate)'))
+  const o = M.sampleOrg()
+  o.outcomes = o.outcomes.map((x) => ({ ...x, measured: true }))
+  assert.ok(!M.applicationKit(o).find((s) => s.id === 'impact').text.includes('(estimate)'))
+})
+
+// ── Quick wins: Google Ad Grants readiness ──────────────────────────────
+test('the Ad Grants quick win is in the catalog, complete, and marked unverified', () => {
+  const q = C.QUICK_WINS.find((x) => x.id === 'ad-grants')
+  assert.ok(q && q.programId === 'google' && C.PROGRAMS.some((p) => p.id === q.programId))
+  assert.ok(q.url.startsWith('https://') && q.items.length >= 6 && q.effort === 'S')
+  assert.equal(new Set(q.items.map((i) => i.id)).size, q.items.length)
+  assert.ok(q.items.every((i) => i.text && i.stage))
+  assert.ok(q.checked === null || /^\d{4}-\d{2}-\d{2}$/.test(q.checked))
+  assert.equal(M.quickWins(org, C)[0].verified, !!q.checked)
+})
+
+test('Ad Grants readiness follows Google eligibility and ticks, and feeds the roadmap', () => {
+  const [w] = M.quickWins(org, C)
+  assert.ok(w.eligible && w.done === 0 && !w.ready && w.next.id === w.items[0].id)
+  const r = M.roadmap(org, 3, M.quickWins(org, C))
+  const item = r.phases[0].items.find((i) => i.id === 'q-ad-grants')
+  assert.ok(item && item.quickWin && r.phases[0].label === 'First 30 days')
+  assert.equal(r.phases[0].items[0].id, 'q-ad-grants')
+  assert.ok(r.phases[0].items.some((i) => i.id === 'claim-tech'), 'a quick win does not push other steps out')
+  const school = M.quickWins({ ...org, orgKind: 'School or academic institution' }, C)[0]
+  assert.ok(!school.eligible && school.reason)
+  assert.ok(!M.roadmap({ ...org, orgKind: 'School or academic institution' }, 3, [school]).phases.flatMap((p) => p.items).some((i) => i.id === 'q-ad-grants'))
+  const ticks = Object.fromEntries(w.items.map((i) => [i.id, true]))
+  const ready = M.quickWins({ ...org, quickWins: { 'ad-grants': ticks } }, C)[0]
+  assert.ok(ready.ready && ready.score === 100 && ready.next === null)
+  assert.ok(!M.roadmap(org, 3, [ready]).phases.flatMap((p) => p.items).some((i) => i.id === 'q-ad-grants'))
+  assert.deepEqual(M.quickWins(M.blankOrg(), {}), [])
+})
+
 console.log(`\n${n} tests passed`)
