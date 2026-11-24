@@ -82,7 +82,7 @@ main { padding: 32px 0 72px; }
 
 label.f { display: grid; gap: 4px; font-size: 0.9rem; font-weight: 600; }
 label.f small { font-weight: 400; color: var(--dim); }
-input[type=text], input[type=number], select, textarea { width: 100%; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+input[type=text], input[type=number], input[type=date], select, textarea { width: 100%; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-width: 0; }
 textarea { resize: vertical; min-height: 64px; }
 input[type=range] { width: 100%; accent-color: var(--accent); }
 input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
@@ -115,6 +115,11 @@ svg.chart { width: 100%; height: auto; display: block; }
 .dots i.on { background: var(--good); }
 textarea.kit { min-height: 96px; font-size: 0.95rem; line-height: 1.5; }
 .hero { padding: 36px 0 8px; }
+.est { display: inline-block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 99px; padding: 1px 7px; vertical-align: middle; white-space: nowrap; background: var(--soft); color: var(--mid); border: 1px solid currentColor; font-family: var(--sans); }
+.est.measured { color: var(--good); }
+.case { border-left: 4px solid var(--accent); }
+.signup label { display: block; }
+.signup input[type=email] { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-width: 0; }
 .modules { counter-reset: m; }
 .modules .card b { display: block; font-family: var(--serif); font-size: 1.1rem; margin: 2px 0 4px; }
 footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--dim); font-size: 0.85rem; }
@@ -139,10 +144,14 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
 </header>
 <main><div class="wrap" id="view"></div></main>
 <footer><div class="wrap">
-  <p><strong>Your data stays on this device.</strong> ARC Mission runs entirely in this browser tab: no account, no server, no network requests. Use <em>Organization → Export</em> to keep a copy.</p>
+  <div data-signup="mission" class="noprint" style="margin-bottom:18px"></div>
+  <p><strong>Your data stays on this device.</strong> ARC Mission runs in this browser tab: no account and no server. <span data-privacy>This page sends nothing unless you submit a form.</span> Use <em>Organization → Export</em> to keep a copy.</p>
+  <p class="noprint" style="margin-top:6px"><a href="apply.html">Apply to the nonprofit cohort</a> for hands-on help from ARC.</p>
   <p style="margin-top:6px">A prototype by ARC Labs, part of ARC Transformation Group. Scores use stated rules of thumb, not sector benchmarks, and are a starting point for a conversation — not financial advice.</p>
 </div></footer>
 
+<script src="config.js"></script>
+<script src="site.js"></script>
 <script src="catalog.js"></script>
 <script src="model.js"></script>
 <script>
@@ -164,7 +173,10 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
 
   let org = load()
   let tab = org ? 'intelligence' : 'welcome'
-  const C = window.ArcMissionCatalog || { checked: '', PROGRAMS: [], SOURCES: [] }
+  const C = window.ArcMissionCatalog || { checked: '', PROGRAMS: [], SOURCES: [], QUICK_WINS: [] }
+  const track = (name, props) => { if (window.ArcSite) window.ArcSite.track(name, props) }
+  /** ARC's honesty rule: anything not measured carries this label. */
+  const est = (label) => `<span class="est${label === 'Measured' ? ' measured' : ''}">${label || 'Estimate'}</span>`
   const sub = { funding: 'eligible', transform: 'assess' }
   let funderQuestion = ''
   let scenario = Object.assign({}, M.DEFAULT_SCENARIO)
@@ -197,6 +209,7 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
 
   // ── Inputs bound to the organization by data-bind="path" ────────────────
   const text = (path, attrs) => `<input type="text" data-bind="${path}" value="${esc(getPath(org, path))}" ${attrs || ''}>`
+  const numberOrBlank = (path, attrs) => { const v = getPath(org, path); return `<input type="number" inputmode="decimal" data-bind="${path}" data-blank="null" value="${v == null || v === '' ? '' : esc(v)}" ${attrs || ''}>` }
   const number = (path, attrs) => `<input type="number" inputmode="decimal" data-bind="${path}" value="${esc(getPath(org, path) || '')}" placeholder="0" ${attrs || ''}>`
   const select = (path, options, label) => `<select data-bind="${path}" aria-label="${esc(label)}">${options.map((o) => `<option${getPath(org, path) === o ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`
 
@@ -352,12 +365,12 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
     const served = Number(org.peopleServed) || 0
     return `
       <div class="grid g3">
-        <div class="card stat"><b class="${sc.net >= 0 ? 'c-good' : 'c-bad'}">${money(sc.net)}</b><span>Annual result${changed ? ' · was ' + money(ba.net) : ''}</span></div>
-        <div class="card stat"><b class="${sc.zeroMonth === null ? 'c-good' : 'c-bad'}">${sc.zeroMonth === null ? '24+' : sc.zeroMonth} <span style="font-size:1rem;color:inherit">months</span></b><span>${when(sc.zeroMonth)}</span></div>
-        <div class="card stat"><b>${served ? s.peopleServed.toLocaleString('en-US') : '—'}</b><span>People served a year${served && s.peopleServed !== served ? ' · was ' + served.toLocaleString('en-US') : ''}</span></div>
+        <div class="card stat"><b class="${sc.net >= 0 ? 'c-good' : 'c-bad'}">${money(sc.net)}</b><span>${est()} Annual result${changed ? ' · was ' + money(ba.net) : ''}</span></div>
+        <div class="card stat"><b class="${sc.zeroMonth === null ? 'c-good' : 'c-bad'}">${sc.zeroMonth === null ? '24+' : sc.zeroMonth} <span style="font-size:1rem;color:inherit">months</span></b><span>${est()} ${when(sc.zeroMonth)}</span></div>
+        <div class="card stat"><b>${served ? s.peopleServed.toLocaleString('en-US') : '—'}</b><span>${est()} People served a year${served && s.peopleServed !== served ? ' · was ' + served.toLocaleString('en-US') : ''}</span></div>
       </div>
       <div class="card" style="margin-top:16px">
-        <h3>Cash over the next 24 months</h3>
+        <h3>Cash over the next 24 months ${est()}</h3>
         <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Cash projection. Current path: ${when(ba.zeroMonth).toLowerCase()}, ending at ${money(ba.cash[24])}. Scenario: ${when(sc.zeroMonth).toLowerCase()}, ending at ${money(sc.cash[24])}.">
           ${[0, 6, 12, 18, 24].map((i) => `<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H - B}" stroke="var(--line)"/><text x="${x(i)}" y="${H - 8}" font-size="12" fill="var(--dim)" text-anchor="${i === 0 ? 'start' : i === 24 ? 'end' : 'middle'}">${i === 0 ? 'Today' : 'Month ' + i}</text>`).join('')}
           <line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--ink)" stroke-width="1"/>
@@ -374,7 +387,7 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
           <tr><td>Annual costs</td><td class="num">${money(ba.expenses)}</td><td class="num">${money(sc.expenses)}</td></tr>
           <tr><td>Staff hours returned to the mission</td><td class="num">—</td><td class="num">${s.hoursFreedPerYear ? s.hoursFreedPerYear.toLocaleString('en-US') + ' / yr' : '—'}</td></tr>
         </tbody></table>
-        <p class="small dim" style="margin-top:10px">Assumes income and costs arrive evenly through the year, and that the number of people served moves in proportion to program spending. Both are simplifications.</p>
+        <p class="small dim" style="margin-top:10px">Every figure on this page is a projection, not a measurement. Assumes income and costs arrive evenly through the year, and that the number of people served moves in proportion to program spending. Both are simplifications.</p>
       </div>`
   }
 
@@ -525,8 +538,8 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
         <p class="dim" style="max-width:62ch;margin-bottom:14px">List the administrative work that repeats every week. This is where technology most reliably gives time back to the mission.</p>
         <div class="grid g3" style="margin-bottom:16px">
           <div class="card stat"><b>${a.hours}</b><span>Hours a week listed</span></div>
-          <div class="card stat"><b class="c-good">${a.recoverable}</b><span>Hours a week that could come back</span></div>
-          <div class="card stat"><b class="c-good">${a.perYear.toLocaleString('en-US')}</b><span>Hours a year</span></div>
+          <div class="card stat"><b class="c-good">${a.recoverable}</b><span>${est()} Hours a week that could come back</span></div>
+          <div class="card stat"><b class="c-good">${a.perYear.toLocaleString('en-US')}</b><span>${est()} Hours a year that could come back</span></div>
         </div>
         <div class="card">
           <div class="tablewrap"><table><thead><tr><th>Task</th><th>Kind</th><th>Hours a week</th><th>Could come back</th><th>How</th><th></th></tr></thead><tbody>
@@ -539,13 +552,13 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
   }
 
   function transformRoadmap() {
-    const r = M.roadmap(org, eligibleCount())
+    const r = M.roadmap(org, eligibleCount(), M.quickWins(org, C))
     const effort = { S: 'Days', M: 'Weeks', L: 'A project' }
     return `
       <section class="section" style="margin-top:20px">
         <div class="row" style="justify-content:space-between;margin-bottom:16px"><p class="dim" style="max-width:56ch">Your next steps from every module, in the order to do them: quick wins first. ${r.done} of ${r.total} done.</p><button class="btn noprint" data-act="print">Print or save as PDF</button></div>
         ${r.total ? r.phases.filter((p) => p.items.length).map((p) => `<div class="card" style="margin-bottom:16px"><p class="eyebrow" style="margin-bottom:12px">${p.label}</p>${p.items.map((i) => `<div class="item ${i.status === 'done' ? 'done' : ''}">
-            <div><span class="small dim">${esc(i.area)} · ${effort[i.effort]}</span> ${i.help === 'arc' ? '<span class="pill c-mid">ARC can help</span>' : '<span class="pill dim">Do it yourself</span>'}<h3 style="margin:4px 0">${esc(i.title)}</h3><p class="small">${esc(i.how)}</p></div>
+            <div><span class="small dim">${esc(i.area)} · ${effort[i.effort]}</span> ${i.quickWin ? '<span class="pill c-good">Quick win</span> ' : ''}${i.help === 'arc' ? '<span class="pill c-mid">ARC can help</span>' : '<span class="pill dim">Do it yourself</span>'}<h3 style="margin:4px 0">${esc(i.title)}</h3><p class="small">${esc(i.how)}</p></div>
             <select data-plan="${i.id}" aria-label="Status of: ${esc(i.title)}" class="noprint" style="width:auto"><option value="todo"${i.status === 'todo' ? ' selected' : ''}>To do</option><option value="doing"${i.status === 'doing' ? ' selected' : ''}>In progress</option><option value="done"${i.status === 'done' ? ' selected' : ''}>Done</option></select>
           </div>`).join('')}</div>`).join('') : '<div class="card"><p class="dim">Complete the assessment and the roadmap builds itself.</p></div>'}
       </section>`
@@ -567,6 +580,7 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
             <p class="dim small" style="margin-bottom:10px">${r.arc.length ? `${r.arc.length} step${r.arc.length === 1 ? '' : 's'} on your roadmap are ones ARC can help with.` : 'Complete the assessment to fill this in.'} Copy this and send it to your ARC contact — it tells them where you are without a discovery call.</p>
             <textarea class="kit" id="brief" readonly style="min-height:320px" aria-label="Brief for ARC">${esc(M.helpBrief(org, eligibleCount()))}</textarea>
             <p class="small dim" style="margin-top:8px">Nothing is sent from this page. You choose who sees it.</p>
+            <a class="btn primary noprint" style="margin-top:12px" href="apply.html">Apply to the nonprofit cohort</a>
           </div>
         </div>
       </section>`
@@ -599,7 +613,26 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
           ${groups.map((g) => `<fieldset style="border:0;padding:0;margin:0 0 18px"><legend class="eyebrow" style="padding:0;margin-bottom:4px">${g}</legend>
             ${M.REACH_ITEMS.filter((i) => i.group === g).map((i) => `<label class="check"><input type="checkbox" data-reach="${i.id}" ${org.reach[i.id] ? 'checked' : ''}><span>${esc(i.text)}</span></label>`).join('')}</fieldset>`).join('')}
         </div>
-      </div>`
+      </div>` + quickWinsView()
+  }
+
+  function quickWinsView() {
+    const wins = M.quickWins(org, C)
+    if (!wins.length) return ''
+    return wins.map((q) => {
+      const stages = [...new Set(q.items.map((i) => i.stage))]
+      return `
+      <section class="section">
+        <div class="row" style="justify-content:space-between"><h2>Quick win: ${esc(q.title)}</h2>${q.eligible ? `<span class="small dim">${q.done} of ${q.total} ready</span>` : ''}</div>
+        <div class="card" style="margin-top:14px">
+          <p style="max-width:62ch">${esc(q.offer)}</p>
+          ${q.verified ? `<p class="small dim" style="margin-top:6px">Checked against the provider’s pages on ${esc(q.checked)}.</p>` : `<p class="banner small" style="margin:12px 0 0"><span><strong>Not yet checked against Google’s own pages.</strong> Treat this as a starting list and confirm each item on ${ext(q.url, 'Google Ad Grants')} before relying on it.</span></p>`}
+          ${q.eligible ? `<div class="grid g2" style="margin-top:14px">${stages.map((st) => `<fieldset style="border:0;padding:0;margin:0"><legend class="eyebrow" style="padding:0;margin-bottom:4px">${esc(st)}</legend>${q.items.filter((i) => i.stage === st).map((i) => `<label class="check"><input type="checkbox" data-win="${q.id}.${i.id}" ${q.ticks[i.id] ? 'checked' : ''}><span>${esc(i.text)}</span></label>`).join('')}</fieldset>`).join('')}</div>
+          <p class="small" style="margin-top:10px">${q.ready ? '<strong class="c-good">Ready.</strong> Apply from your Google for Nonprofits account.' : `<strong>Next:</strong> ${esc(q.next.text)}. Unticked items also appear on the 90-day roadmap as a quick win.`}</p>`
+          : `<p class="dim" style="margin-top:10px">${esc(q.reason)} Google decides eligibility; this follows the Google for Nonprofits rules in Funding → Eligible now.</p>`}
+        </div>
+      </section>`
+    }).join('')
   }
 
   function outcomeRows(editable) {
@@ -607,8 +640,8 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
       const p = M.outcomeProgress(o)
       const delta = (p.change > 0 ? '+' : '') + (Math.round(p.change * 10) / 10) + (p.changePct == null ? '' : ' (' + (p.changePct > 0 ? '+' : '') + Math.round(p.changePct * 100) + '%)')
       const bar = `<span class="track" style="min-width:70px" role="img" aria-label="${p.toTarget == null ? 'no target' : Math.round(p.toTarget * 100) + '% of the way to target'}"><i style="width:${Math.round((p.toTarget || 0) * 100)}%"></i></span>`
-      if (!editable) return `<tr><td>${esc(o.name)}</td><td class="num">${esc(o.baseline)}</td><td class="num"><strong>${esc(o.current)}</strong> ${esc(o.unit)}</td><td class="num ${p.improved ? 'c-good' : 'dim'}">${delta}</td><td class="num">${esc(o.target)}</td></tr>`
-      return `<tr><td>${text(`outcomes.${i}.name`, 'aria-label="Indicator"')}</td><td>${text(`outcomes.${i}.unit`, 'aria-label="Unit" style="min-width:5rem"')}</td><td>${number(`outcomes.${i}.baseline`, 'aria-label="Starting value"')}</td><td>${number(`outcomes.${i}.current`, 'aria-label="Value now"')}</td><td>${number(`outcomes.${i}.target`, 'aria-label="Target"')}</td><td class="${p.improved ? 'c-good' : 'dim'}" style="white-space:nowrap">${delta}<br>${bar}</td><td><button class="btn quiet" data-act="remove" data-list="outcomes" data-i="${i}" aria-label="Remove indicator">✕</button></td></tr>`
+      if (!editable) return `<tr><td>${esc(o.name)} ${est(M.evidenceLabel(o))}</td><td class="num">${esc(o.baseline)}</td><td class="num"><strong>${esc(o.current)}</strong> ${esc(o.unit)}</td><td class="num ${p.improved ? 'c-good' : 'dim'}">${delta}</td><td class="num">${esc(o.target)}</td></tr>`
+      return `<tr><td>${text(`outcomes.${i}.name`, 'aria-label="Indicator"')}</td><td>${text(`outcomes.${i}.unit`, 'aria-label="Unit" style="min-width:5rem"')}</td><td>${number(`outcomes.${i}.baseline`, 'aria-label="Starting value"')}</td><td>${number(`outcomes.${i}.current`, 'aria-label="Value now"')}</td><td>${number(`outcomes.${i}.target`, 'aria-label="Target"')}</td><td class="${p.improved ? 'c-good' : 'dim'}" style="white-space:nowrap">${delta}<br>${bar}</td><td><label class="check" style="padding:0"><input type="checkbox" data-bind="outcomes.${i}.measured" ${o.measured ? 'checked' : ''} aria-label="Measured, not estimated">${est(M.evidenceLabel(o))}</label></td><td><button class="btn quiet" data-act="remove" data-list="outcomes" data-i="${i}" aria-label="Remove indicator">✕</button></td></tr>`
     }).join('')
   }
 
@@ -616,11 +649,48 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
     const has = (org.outcomes || []).length
     return head('05 · Mission Outcomes', 'What is changing because of the work', 'Choose a few indicators that matter, record where each one started and where it stands now. Three good ones beat thirty.') + `
       <section class="section" style="margin-top:24px"><div class="card">
-        <div class="tablewrap"><table><thead><tr><th>Indicator</th><th>Unit</th><th>Started at</th><th>Now</th><th>Target</th><th>Change</th><th></th></tr></thead><tbody>
-        ${outcomeRows(true) || '<tr><td colspan="7" class="dim">No indicators yet. Start with the number you already report most often.</td></tr>'}
+        <div class="tablewrap"><table><thead><tr><th>Indicator</th><th>Unit</th><th>Started at</th><th>Now</th><th>Target</th><th>Change</th><th>Measured?</th><th></th></tr></thead><tbody>
+        ${outcomeRows(true) || '<tr><td colspan="8" class="dim">No indicators yet. Start with the number you already report most often.</td></tr>'}
         </tbody></table></div>
         <div class="row" style="margin-top:12px"><button class="btn" data-act="add-outcome">+ Add indicator</button>${has ? '<button class="btn primary" data-go="report">Generate impact report</button>' : ''}</div>
-      </div></section>`
+        <p class="small dim" style="margin-top:10px">Tick “Measured?” only when the number was counted from records. Everything else is shown as an estimate, here and in the report.</p>
+      </div></section>` + resultsView()
+  }
+
+  function resultsView() {
+    const R = M.results(org)
+    const cases = M.caseStudies(org)
+    const card = (r, i) => `
+      <div class="card" style="margin-bottom:14px">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px"><h3>${r.metric ? esc(r.metric) : 'New result'} ${est(r.label)}</h3><button class="btn quiet noprint" data-act="remove" data-list="results" data-i="${i}" aria-label="Remove result">✕ Remove</button></div>
+        <div class="grid g2">
+          <label class="f" style="grid-column:1/-1">What was counted <small>For example: hours a week spent retyping forms.</small>${text(`results.${i}.metric`)}</label>
+          <label class="f">Baseline ${numberOrBlank(`results.${i}.baseline`, 'step="any"')}</label>
+          <label class="f">Baseline date <input type="date" data-bind="results.${i}.baselineDate" value="${esc(r.baselineDate)}"></label>
+          <label class="f">After ${numberOrBlank(`results.${i}.after`, 'step="any"')}</label>
+          <label class="f">After date <input type="date" data-bind="results.${i}.afterDate" value="${esc(r.afterDate)}"></label>
+          <label class="f">Unit <small>hours, days, people, %…</small>${text(`results.${i}.unit`, 'style="max-width:10rem"')}</label>
+          <label class="f">What was done ${text(`results.${i}.work`)}</label>
+          <label class="check"><input type="checkbox" data-bind="results.${i}.measured" ${r.measured ? 'checked' : ''}><span>Measured, not estimated<br><span class="small dim">Counted from records or a log, before and after.</span></span></label>
+          <label class="f">How it was measured <small>Required for “Measured”.</small>${text(`results.${i}.method`)}</label>
+          <label class="check"><input type="checkbox" data-bind="results.${i}.permission_to_publish" ${r.permission_to_publish === true ? 'checked' : ''}><span>The organization has given permission to publish this<br><span class="small dim">Leave unticked until permission is in writing.</span></span></label>
+          <label class="f">Date permission was given <input type="date" data-bind="results.${i}.permissionDate" value="${esc(r.permissionDate)}"></label>
+        </div>
+        ${r.complete ? `<p class="small" style="margin-top:12px"><strong>Change:</strong> ${r.change > 0 ? '+' : ''}${Math.round(r.change * 100) / 100}${r.changePct == null ? '' : ' (' + (r.changePct > 0 ? '+' : '') + Math.round(r.changePct * 100) + '%)'} over ${r.days} days.</p>` : ''}
+        ${r.problems.concat(r.warnings).length ? `<ul class="small dim" style="margin:10px 0 0;padding-left:18px">${r.problems.concat(r.warnings).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+        <p class="small" style="margin-top:10px">${r.publishable ? '<strong class="c-good">Publishable.</strong> A case-study preview is below.' : '<strong>Private.</strong> No case study is produced from this record.'}</p>
+      </div>`
+    return `
+      <section class="section">
+        <h2>Before and after</h2>
+        <p class="dim" style="margin:-6px 0 14px;max-width:62ch">The record of what changed with ARC’s help: a baseline, an after number, the dates and whether the organization agreed to publish. ${R.rows.length ? `${R.complete} complete · ${R.measured} measured · ${R.publishable} publishable.` : ''}</p>
+        ${R.rows.map(card).join('') || '<div class="card" style="margin-bottom:14px"><p class="dim">No results recorded yet. Record the baseline before the work starts — it cannot be rebuilt afterwards.</p></div>'}
+        <button class="btn noprint" data-act="add-result">+ Add result</button>
+      </section>
+      ${cases.length ? `<section class="section"><h2>Case-study preview</h2>
+        <p class="dim" style="margin:-6px 0 14px;max-width:62ch">Only results with permission to publish appear here.</p>
+        <div class="grid">${cases.map((c) => `<article class="card case"><h3>${esc(c.headline)} ${est(c.label)}</h3><p style="margin-top:8px">${esc(c.body)}</p>${c.permissionDate ? `<p class="small dim" style="margin-top:8px">Permission given ${esc(c.permissionDate)}.</p>` : ''}</article>`).join('')}</div>
+      </section>` : ''}`
   }
 
   function orgView() {
@@ -677,15 +747,17 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
       <div class="grid g3 section" style="margin-top:24px">
         <div class="card stat"><b>${org.peopleServed ? Number(org.peopleServed).toLocaleString('en-US') : '—'}</b><span>People served a year</span></div>
         <div class="card stat"><b>${pct(m.programShare)}</b><span>Of spending goes to programs</span></div>
-        <div class="card stat"><b>${h.score == null ? '—' : h.score + ' / 100'}</b><span>Organizational health${h.score == null ? '' : ' · ' + h.band}</span></div>
+        <div class="card stat"><b>${h.score == null ? '—' : h.score + ' / 100'}</b><span>Organizational health${h.score == null ? '' : ' · ' + h.band} · a rule-based score</span></div>
       </div>
       ${(org.outcomes || []).length ? `<section class="section"><h2>What changed</h2><div class="card"><div class="tablewrap"><table><thead><tr><th>Indicator</th><th class="num">Started at</th><th class="num">Now</th><th class="num">Change</th><th class="num">Target</th></tr></thead><tbody>${outcomeRows(false)}</tbody></table></div></div></section>` : ''}
+      ${M.caseStudies(org).length ? `<section class="section"><h2>Results</h2><div class="grid">${M.caseStudies(org).map((c) => `<div class="card case"><h3>${esc(c.headline)} ${est(c.label)}</h3><p style="margin-top:6px">${esc(c.body)}</p></div>`).join('')}</div></section>` : ''}
       <section class="section"><h2>Sustainability</h2><div class="card"><table><tbody>
         <tr><td>Annual income</td><td class="num">${money(m.revenue)}</td></tr>
         <tr><td>Annual costs</td><td class="num">${money(m.expenses)}</td></tr>
         <tr><td>Reserves</td><td class="num">${money(org.reserves)}${m.runwayMonths == null ? '' : ' · ' + (Math.round(m.runwayMonths * 10) / 10) + ' months of costs'}</td></tr>
         <tr><td>Largest single source of income</td><td class="num">${pct(m.largestShare)}</td></tr>
         <tr><td>Funding being pursued</td><td class="num">${money(p.total)}</td></tr>
+        <tr><td>Weighted by likelihood ${est()}</td><td class="num">${money(p.weighted)}</td></tr>
       </tbody></table></div></section>
       <section class="section"><h2>${acting.length ? 'What we are acting on' : 'What needs attention'}</h2>
         <div class="grid g2">${(acting.length ? acting : f.slice(0, 4)).map((x) => `<div class="card finding s${x.severity}"><h3>${esc(x.title)}</h3><p style="margin-top:6px">${esc(x.why)}</p><p class="next"><strong>${acting.length ? 'In progress since ' + esc(org.actions[x.id].since) + '.' : 'Next step.'}</strong> ${esc(x.next)}</p></div>`).join('') || '<div class="card"><p class="dim">Nothing flagged.</p></div>'}</div>
@@ -703,16 +775,16 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
     if (org && tab === 'simulator' && document.getElementById('sim-out')) document.getElementById('sim-out').innerHTML = simOut()
     document.title = org && org.name ? org.name + ' · ARC Mission' : 'ARC Mission'
   }
-  function go(t) { tab = t; render(); window.scrollTo(0, 0) }
+  function go(t) { tab = t; render(); window.scrollTo(0, 0); track('tab_viewed', { tab: t }) }
 
   // ── Events ──────────────────────────────────────────────────────────────
   const ACTIONS = {
-    start() { org = M.blankOrg(); save(); go('org') },
-    sample() { org = M.sampleOrg(); save(); go('intelligence') },
+    start() { org = M.blankOrg(); save(); track('own_org_started'); go('org') },
+    sample() { org = M.sampleOrg(); save(); track('sample_opened'); go('intelligence') },
     acting(el) {
       org.actions = org.actions || {}
       if (org.actions[el.dataset.id]) delete org.actions[el.dataset.id]
-      else org.actions[el.dataset.id] = { since: today() }
+      else { org.actions[el.dataset.id] = { since: today() }; track('finding_acted', { finding: el.dataset.id }) }
       save(); render()
     },
     'add-revenue'() { org.revenue.push({ source: '', type: 'Grant', amount: 0, recurring: false }); save(); render() },
@@ -727,6 +799,7 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(done, fallback)
       else fallback()
     },
+    'add-result'() { org.results = org.results || []; org.results.push(M.blankResult()); save(); render() },
     'add-outcome'() { org.outcomes.push({ name: '', unit: '', baseline: 0, current: 0, target: 0 }); save(); render() },
     remove(el) { org[el.dataset.list].splice(Number(el.dataset.i), 1); save(); render() },
     'reset-scn'() { scenario = Object.assign({}, M.DEFAULT_SCENARIO); render() },
@@ -765,9 +838,15 @@ footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--d
     if (el.dataset.local === 'funderQuestion') { funderQuestion = el.value; return render() }
     if (el.dataset.plan) { org.plan[el.dataset.plan] = el.value; save(); return render() }
     if (el.dataset.bind) {
-      const v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? (el.value === '' ? 0 : Number(el.value)) : el.value
+      const blank = el.dataset.blank === 'null' ? null : 0
+      const v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? (el.value === '' ? blank : Number(el.value)) : el.value
       setPath(org, el.dataset.bind, v)
       if (org.sample && el.dataset.bind === 'name') org.sample = false
+      save(); render()
+    } else if (el.dataset.win) {
+      const [w, i] = el.dataset.win.split('.')
+      org.quickWins = org.quickWins || {}
+      org.quickWins[w] = Object.assign({}, org.quickWins[w], { [i]: el.checked })
       save(); render()
     } else if (el.dataset.reach) {
       org.reach[el.dataset.reach] = el.checked

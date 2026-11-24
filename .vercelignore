@@ -1,0 +1,7 @@
+# Deployed as-is: only the pages and the scripts they load are served.
+.github
+docs
+test.js
+package.json
+NOTES.md
+README.md

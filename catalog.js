@@ -158,5 +158,36 @@
     { name: 'Instrumentl', region: 'United States · grant discovery', free: false, countries: ['United States'], covers: 'Paid service that matches grants to your organization and tracks deadlines. Offers a free trial.', url: 'https://www.instrumentl.com/pricing' },
   ]
 
-  return { checked: '2026-11-21', PROGRAMS, SOURCES }
+  // Quick wins: short checklists that end in something an organization can claim.
+  // `checked` is the date the items were read on the provider's own pages.
+  // It is null when they have not been: the UI then says so on screen.
+  //
+  // NOT YET VERIFIED (2026-11-23): Google's Ad Grants pages could not be reached
+  // when this was written, so the items below are stated from general knowledge
+  // of the program and deliberately leave out exact thresholds. Read
+  // https://support.google.com/grants/ before showing this to a nonprofit, then
+  // set `checked`.
+  const QUICK_WINS = [
+    {
+      id: 'ad-grants', programId: 'google', title: 'Get ready for Google Ad Grants',
+      area: 'Digital awareness', effort: 'S', impact: 3, help: 'self',
+      offer: 'Google Search advertising at no cost, through Google for Nonprofits. The size of the grant is on the Google for Nonprofits entry under Funding → Eligible now.',
+      checked: null,
+      url: 'https://www.google.com/grants/',
+      items: [
+        { id: 'gfn', stage: 'Before you apply', text: 'The organization has an approved Google for Nonprofits account' },
+        { id: 'domain', stage: 'Before you apply', text: 'The website is on the organization’s own domain, not a social media page or a free page on someone else’s site' },
+        { id: 'https', stage: 'Before you apply', text: 'Every page loads securely over HTTPS' },
+        { id: 'content', stage: 'Before you apply', text: 'The website clearly states the mission and describes the programs in detail' },
+        { id: 'noncommercial', stage: 'Before you apply', text: 'The website is not mainly selling products or showing other people’s ads' },
+        { id: 'goal', stage: 'Before you apply', text: 'One action you want visitors to take is chosen: donate, volunteer, sign up or get help' },
+        { id: 'tracking', stage: 'Once the account is live', text: 'Conversion tracking is set up for that action' },
+        { id: 'structure', stage: 'Once the account is live', text: 'Campaigns are organised into ad groups by theme, each with more than one ad, plus sitelinks' },
+        { id: 'review', stage: 'Once the account is live', text: 'Someone reviews the account every month against Google’s click-through and keyword-quality rules' },
+        { id: 'owner', stage: 'Once the account is live', text: 'One named person owns the account and will answer Google’s yearly program survey' },
+      ],
+    },
+  ]
+
+  return { checked: '2026-11-21', PROGRAMS, SOURCES, QUICK_WINS }
 })

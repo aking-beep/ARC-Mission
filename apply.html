@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apply to the cohort · ARC Mission</title>
+<meta name="description" content="Apply for a place in the ARC Mission nonprofit cohort: hands-on help with the technology and admin work that takes time away from the mission.">
+<style>
+:root {
+  --paper: #f5f0e6; --card: #fffdf8; --ink: #1c2925; --dim: #56635c; --line: #dcd3c1;
+  --accent: #a94e27; --accent-ink: #fffaf3; --good: #2d6a4f; --bad: #a3392a; --soft: #ece5d6; --focus: #1d5fa8;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #151b19; --card: #1d2522; --ink: #ece7dc; --dim: #a3aea7; --line: #34403b;
+    --accent: #e08a5e; --accent-ink: #1a120d; --good: #7cc4a1; --bad: #ef8d7c; --soft: #242e2a; --focus: #8fc0ff;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.55 var(--sans); }
+h1, h2 { font-family: var(--serif); font-weight: 600; line-height: 1.15; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 2.6rem); }
+p { margin: 0; }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+.eyebrow { font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
+.dim { color: var(--dim); } .small { font-size: 0.875rem; }
+header.top { border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 18px 0; }
+.brand a { text-decoration: none; color: inherit; }
+.brand b { font-family: var(--serif); font-size: 1.3rem; letter-spacing: 0.02em; }
+.brand b span { color: var(--accent); }
+main { padding: 32px 0 72px; }
+.lede { color: var(--dim); margin-top: 10px; font-size: 1.05rem; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+.grid { display: grid; gap: 16px; }
+@media (min-width: 640px) { .g2 { grid-template-columns: 1fr 1fr; } }
+.full { grid-column: 1 / -1; }
+label.f { display: grid; gap: 4px; font-size: 0.95rem; font-weight: 600; }
+label.f small { font-weight: 400; color: var(--dim); }
+input[type=text], input[type=email], input[type=url], select, textarea { width: 100%; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; min-width: 0; }
+textarea { resize: vertical; min-height: 84px; }
+input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); flex: none; margin-top: 3px; }
+.check { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn[disabled] { opacity: 0.6; cursor: progress; }
+.banner { background: var(--soft); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 20px; }
+.err { color: var(--bad); font-weight: 400; font-size: 0.85rem; }
+.hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+ul.what { margin: 12px 0 0; padding-left: 20px; }
+footer { border-top: 1px solid var(--line); padding: 20px 0 40px; color: var(--dim); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap brand">
+  <a href="./"><b>ARC <span>MISSION</span></b></a>
+  <span class="small dim">Technology for a greater purpose</span>
+</div></header>
+
+<main><div class="wrap">
+  <p class="eyebrow">Nonprofit cohort</p>
+  <h1 style="margin-top:8px">Apply for hands-on help</h1>
+  <p class="lede">A small group of nonprofits works with ARC Transformation Group on the technology and admin work that takes time away from the mission. We record where you start and where you end up, and share results only with your permission.</p>
+  <ul class="what dim">
+    <li>Takes about five minutes. Nothing here is a commitment.</li>
+    <li>We read every application and reply by email.</li>
+  </ul>
+
+  <div id="notice" class="banner" hidden></div>
+
+  <form id="apply" class="card grid g2" style="margin-top:24px" novalidate>
+    <input type="hidden" name="form" value="arc-mission-cohort">
+    <input type="hidden" name="cohort" value="2027-1">
+    <input type="hidden" name="submitted_at" value="">
+    <div class="hp" aria-hidden="true"><label>Leave this empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
+
+    <label class="f full">Organization name
+      <input type="text" name="organization" required autocomplete="organization" maxlength="160">
+      <span class="err" data-err="organization"></span></label>
+
+    <label class="f full">Mission <small>One or two sentences: who you serve and what you do.</small>
+      <textarea name="mission" required maxlength="800"></textarea>
+      <span class="err" data-err="mission"></span></label>
+
+    <label class="f">Staff size <small>Paid staff, full-time equivalent.</small>
+      <select name="staff_size" required>
+        <option value="">Choose…</option>
+        <option>No paid staff</option>
+        <option>1–2</option>
+        <option>3–5</option>
+        <option>6–15</option>
+        <option>16–50</option>
+        <option>More than 50</option>
+      </select>
+      <span class="err" data-err="staff_size"></span></label>
+
+    <label class="f">Website <small>Leave blank if you do not have one yet.</small>
+      <input type="url" name="website" inputmode="url" placeholder="https://" maxlength="300">
+      <span class="err" data-err="website"></span></label>
+
+    <label class="f">Biggest time drain
+      <select name="time_drain" required>
+        <option value="">Choose…</option>
+        <option>Data entry</option>
+        <option>Scheduling</option>
+        <option>Reporting to funders</option>
+        <option>Receipts and thank-yous</option>
+        <option>Email and follow-up</option>
+        <option>Finance admin</option>
+        <option>Grant applications</option>
+        <option>Other</option>
+      </select>
+      <span class="err" data-err="time_drain"></span></label>
+
+    <label class="f">Roughly how many hours a week does it take? <small>A guess is fine — we will measure it together.</small>
+      <input type="text" name="time_drain_hours" inputmode="decimal" maxlength="20"></label>
+
+    <label class="f full">Tell us about it <small>What happens, who does it, and what you would do with the time back.</small>
+      <textarea name="time_drain_detail" maxlength="1500"></textarea></label>
+
+    <label class="f">Contact name
+      <input type="text" name="contact_name" required autocomplete="name" maxlength="120">
+      <span class="err" data-err="contact_name"></span></label>
+
+    <label class="f">Contact email
+      <input type="email" name="contact_email" required autocomplete="email" maxlength="200">
+      <span class="err" data-err="contact_email"></span></label>
+
+    <div class="full">
+      <label class="check"><input type="checkbox" name="consent_to_contact" value="yes" required>
+        <span>ARC Transformation Group may contact me by email about this application and the cohort.</span></label>
+      <span class="err" data-err="consent_to_contact"></span>
+      <p class="small dim" style="margin-top:8px">We use what you send only to assess and reply to your application. It is not added to a mailing list. Results from the cohort are published only with separate, written permission.</p>
+    </div>
+
+    <div class="full row">
+      <button class="btn primary" type="submit">Send application</button>
+      <a href="./" class="small">Back to ARC Mission</a>
+    </div>
+    <p id="status" class="full small" role="status" aria-live="polite"></p>
+  </form>
+
+  <div id="done" class="card" style="margin-top:24px" hidden tabindex="-1">
+    <h2>Application sent</h2>
+    <p style="margin-top:8px">Thank you. We will reply to the email address you gave. While you wait, <a href="./">try ARC Mission</a> on your own numbers — nothing you enter there leaves your browser.</p>
+  </div>
+
+  <div data-signup="apply" class="card" style="margin-top:32px"></div>
+</div></main>
+
+<footer><div class="wrap">
+  <p data-privacy>This page sends nothing unless you submit a form.</p>
+  <p style="margin-top:6px">ARC Mission is a prototype by ARC Labs, part of ARC Transformation Group.</p>
+</div></footer>
+
+<script src="config.js"></script>
+<script src="site.js"></script>
+<script>
+(function () {
+  'use strict'
+  const S = window.ArcSite
+  const form = document.getElementById('apply')
+  const status = document.getElementById('status')
+  const notice = document.getElementById('notice')
+  const button = form.querySelector('button[type=submit]')
+  const endpoint = S.config.FORM_ENDPOINT
+
+  if (!endpoint) {
+    notice.hidden = false
+    notice.innerHTML = '<strong>Applications are not open online yet.</strong> The form works, but it is not connected to anywhere, so nothing will be sent.'
+  } else form.action = endpoint
+  S.track('apply_viewed')
+
+  const MESSAGES = {
+    valueMissing: 'Required.',
+    typeMismatch: 'Check the format.',
+    tooLong: 'Too long.',
+  }
+  function check() {
+    let first = null
+    for (const el of form.elements) {
+      if (!el.name || el.type === 'hidden') continue
+      const slot = form.querySelector(`[data-err="${el.name}"]`)
+      if (!slot) continue
+      const v = el.validity
+      const key = v.valueMissing ? 'valueMissing' : v.typeMismatch ? 'typeMismatch' : v.tooLong ? 'tooLong' : null
+      let msg = key ? MESSAGES[key] : ''
+      if (el.name === 'consent_to_contact' && !el.checked) msg = 'We need your permission to reply.'
+      if (el.name === 'website' && el.value && !/^https?:\/\/[^\s.]+\.[^\s]+$/i.test(el.value.trim())) msg = 'Start with https:// — for example https://example.org'
+      slot.textContent = msg
+      el.setAttribute('aria-invalid', msg ? 'true' : 'false')
+      if (msg && !first) first = el
+    }
+    return first
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault()
+    const bad = check()
+    if (bad) { status.textContent = 'Some answers need attention.'; bad.focus(); return }
+    if (!endpoint) { status.textContent = 'Not sent: online applications are not connected yet.'; return }
+    if (form.elements._gotcha.value) return
+    form.elements.submitted_at.value = new Date().toISOString()
+    const data = new FormData(form)
+    button.disabled = true
+    status.textContent = 'Sending…'
+    S.post(endpoint, data).then((r) => {
+      button.disabled = false
+      if (!r.ok) { status.textContent = r.message; return }
+      S.track('apply_submitted', { staff_size: data.get('staff_size'), time_drain: data.get('time_drain') })
+      form.hidden = true
+      const done = document.getElementById('done')
+      done.hidden = false
+      done.focus()
+    })
+  })
+  form.addEventListener('change', () => { if (status.textContent) check() })
+})()
+</script>
+</body>
+</html>

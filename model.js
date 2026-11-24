@@ -75,6 +75,8 @@
       plan: {},
       readiness: {},
       claimed: {},
+      quickWins: {},
+      results: [],
       sample: false,
     }
   }
@@ -115,6 +117,10 @@
       pipeline: [
         { name: 'Community foundation — capacity grant', amount: 40000, stage: 'Applied', probability: 40, deadline: '2027-01-15' },
         { name: 'Regional bank — sponsorship', amount: 10000, stage: 'In conversation', probability: 50, deadline: '' },
+      ],
+      results: [
+        { metric: 'Hours a week retyping sign-in sheets', unit: 'hours', baseline: 9, baselineDate: '2026-09-01', after: 3, afterDate: '2026-11-15', measured: false, method: '', work: 'Paper sign-in replaced with a tablet form that writes straight into the attendance sheet.', permission_to_publish: true, permissionDate: '2026-11-18' },
+        { metric: 'Days to send a donation receipt', unit: 'days', baseline: 12, baselineDate: '2026-09-01', after: 1, afterDate: '2026-11-15', measured: true, method: 'Median gap between gift date and receipt date in the donation platform, 40 gifts each period', work: 'Automatic receipts turned on in the donation platform.', permission_to_publish: false, permissionDate: '' },
       ],
       outcomes: [
         { name: 'Young people attending weekly', unit: 'people', baseline: 120, current: 164, target: 200 },
@@ -495,15 +501,21 @@
   const PHASES = [['S', 'First 30 days'], ['M', 'By 60 days'], ['L', 'By 90 days']]
 
   /** One prioritised plan drawn from every module. Status lives in org.plan[id]. */
-  function roadmap(org, eligibleCount) {
+  function roadmap(org, eligibleCount, wins) {
     const items = []
     for (const a of maturity(org).areas) if (a.next) items.push({ id: 'm-' + a.next.id, area: a.name, title: a.next.title, how: a.next.how, effort: a.next.effort, impact: a.next.impact, help: a.next.help })
     for (const f of reachScore(org).fixes.slice(0, 3)) items.push({ id: 'r-' + f.id, area: 'Digital awareness', title: f.fix.split('. ')[0].replace(/\.$/, ''), how: 'Not true yet: ' + f.text.replace(/^./, (c) => c.toLowerCase()) + '.', effort: f.weight >= 3 ? 'S' : 'M', impact: f.weight, help: 'self', goal: true })
     for (const r of automationPlan(org).rows.slice(0, 2)) items.push({ id: 't-' + r.index, area: 'Process automation', title: `Automate “${r.name || r.kind}”`, how: `${r.approach}. Assumed to return about ${r.recoverable} of ${r.hoursPerWeek} hours a week.`, effort: 'M', impact: r.recoverable >= 4 ? 3 : 2, help: 'arc' })
     if (eligibleCount > 0) items.push({ id: 'claim-tech', area: 'Funding', title: `Claim the ${eligibleCount} technology program${eligibleCount === 1 ? '' : 's'} you likely qualify for`, how: 'Start with the validator registration; one approval unlocks several programs. See Funding → Eligible now.', effort: 'S', impact: 3, help: 'self' })
+    for (const q of wins || []) if (q.eligible && !q.ready) items.push({ id: 'q-' + q.id, area: q.area, title: q.title, how: `${q.done} of ${q.total} ready. Next: ${q.next.text.replace(/^./, (c) => c.toLowerCase())}.`, effort: q.effort, impact: q.impact, help: q.help, quickWin: true })
     const plan = org.plan || {}
     const withStatus = items.map((i) => ({ ...i, status: plan[i.id] || 'todo' }))
-    const phases = PHASES.map(([effort, label]) => ({ label, items: withStatus.filter((i) => i.effort === effort).sort((a, b) => b.impact - a.impact).slice(0, 6) }))
+    // Quick wins lead their phase and sit outside the six-item cap, so a checklist the organization has started never drops off.
+    const byImpact = (a, b) => b.impact - a.impact
+    const phases = PHASES.map(([effort, label]) => {
+      const inPhase = withStatus.filter((i) => i.effort === effort)
+      return { label, items: inPhase.filter((i) => i.quickWin).sort(byImpact).concat(inPhase.filter((i) => !i.quickWin).sort(byImpact).slice(0, 6)) }
+    })
     const all = phases.flatMap((p) => p.items)
     return { phases, total: all.length, done: all.filter((i) => i.status === 'done').length, arc: all.filter((i) => i.help === 'arc' && i.status !== 'done') }
   }
@@ -593,7 +605,7 @@
       sections.push({ id: 'impact', title: 'Evidence of impact', text: outs.map((o) => {
         const p = outcomeProgress(o)
         const unit = o.unit === '%' ? '%' : ''
-        return `${o.name}: ${p.improved ? 'improved' : 'moved'} from ${o.baseline}${unit} to ${o.current}${unit}${num(o.target) ? `, against a target of ${o.target}${unit}` : ''}.`
+        return `${o.name}: ${p.improved ? 'improved' : 'moved'} from ${o.baseline}${unit} to ${o.current}${unit}${num(o.target) ? `, against a target of ${o.target}${unit}` : ''}${evidenceLabel(o) === 'Estimate' ? ' (estimate)' : ''}.`
       }).join(' ') })
     } else sections.push({ id: 'impact', title: 'Evidence of impact', text: '', missing: 'Add indicators in Mission Outcomes and this section writes itself.' })
     if (m.expenses > 0) {
@@ -646,7 +658,110 @@
     return lines.join('\n')
   }
 
+
+  // ── Quick wins ──────────────────────────────────────────────────────────
+  /**
+   * Short checklists from the catalog that end in something claimable.
+   * Ticks live in org.quickWins[winId][itemId]. A win tied to a program is
+   * offered only when the organization likely qualifies for that program.
+   */
+  function quickWins(org, catalog) {
+    const c = catalog || {}
+    const elig = eligiblePrograms(org, c.PROGRAMS || [])
+    return (c.QUICK_WINS || []).map((q) => {
+      const ticks = (org.quickWins || {})[q.id] || {}
+      const done = q.items.filter((i) => ticks[i.id] === true).length
+      const eligible = !q.programId || elig.eligible.some((p) => p.id === q.programId)
+      const blocked = elig.notEligible.find((p) => p.id === q.programId)
+      return {
+        ...q, ticks, done, total: q.items.length,
+        score: q.items.length ? Math.round((done / q.items.length) * 100) : 0,
+        ready: done === q.items.length,
+        next: q.items.find((i) => ticks[i.id] !== true) || null,
+        eligible,
+        reason: eligible ? null : (blocked && blocked.reason) || 'Not available for this organization.',
+        verified: !!q.checked,
+      }
+    })
+  }
+
+  // ── Results: before and after, per nonprofit ────────────────────────────
+  // ARC's honesty rule: a number is shown as "Measured" only when someone
+  // counted it and says how. Everything else is labelled an estimate.
+  // A case study exists only with explicit permission to publish.
+  const evidenceLabel = (x) => (x && x.measured === true && (x.method === undefined || String(x.method).trim() !== '') ? 'Measured' : 'Estimate')
+
+  function blankResult() {
+    return { metric: '', unit: '', baseline: null, baselineDate: '', after: null, afterDate: '', measured: false, method: '', work: '', permission_to_publish: false, permissionDate: '' }
+  }
+
+  const isNum = (v) => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v))
+  const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v || '') && !Number.isNaN(Date.parse(v))
+
+  /** One result, normalised and checked. Never throws on partial input. */
+  function resultRecord(r) {
+    const x = Object.assign(blankResult(), r || {})
+    x.method = String(x.method || '')
+    const problems = []
+    if (!String(x.metric || '').trim()) problems.push('Name what was counted.')
+    if (!isNum(x.baseline)) problems.push('Add the baseline number.')
+    if (!isDate(x.baselineDate)) problems.push('Add the date of the baseline.')
+    if (!isNum(x.after)) problems.push('Add the after number.')
+    if (!isDate(x.afterDate)) problems.push('Add the date of the after number.')
+    if (isDate(x.baselineDate) && isDate(x.afterDate) && x.afterDate < x.baselineDate) problems.push('The after date is earlier than the baseline date.')
+    const warnings = []
+    if (x.measured === true && !x.method.trim()) warnings.push('Say how it was measured. Until then it is shown as an estimate.')
+    if (x.permission_to_publish === true && !isDate(x.permissionDate)) warnings.push('Record the date permission was given.')
+    const complete = problems.length === 0
+    const baseline = isNum(x.baseline) ? Number(x.baseline) : null
+    const after = isNum(x.after) ? Number(x.after) : null
+    const change = complete ? after - baseline : null
+    return {
+      ...x, baseline, after,
+      label: evidenceLabel(x), complete, problems, warnings, change,
+      changePct: complete && baseline !== 0 ? change / Math.abs(baseline) : null,
+      days: complete ? Math.round((Date.parse(x.afterDate) - Date.parse(x.baselineDate)) / 86400000) : null,
+      publishable: complete && x.permission_to_publish === true,
+    }
+  }
+
+  function results(org) {
+    const rows = (org.results || []).map(resultRecord)
+    return {
+      rows,
+      complete: rows.filter((r) => r.complete).length,
+      measured: rows.filter((r) => r.complete && r.label === 'Measured').length,
+      publishable: rows.filter((r) => r.publishable).length,
+    }
+  }
+
+  /** A case-study preview, or null unless permission_to_publish is exactly true and the record is complete. */
+  function caseStudy(org, r) {
+    const x = resultRecord(r)
+    if (!x.publishable) return null
+    const fmt = (v) => v.toLocaleString('en-US') + (x.unit === '%' ? '%' : x.unit ? ' ' + x.unit : '')
+    const span = x.days >= 60 ? `about ${Math.round(x.days / 30.44)} months` : `${x.days} day${x.days === 1 ? '' : 's'}`
+    const moved = x.change > 0 ? 'rose' : x.change < 0 ? 'fell' : 'stayed'
+    const estimate = x.label === 'Estimate'
+    const body = [
+      `At ${org.name || 'this organization'}, ${x.metric.charAt(0).toLowerCase() + x.metric.slice(1)} ${moved} ${x.change === 0 ? 'at' : 'from'} ${x.change === 0 ? fmt(x.after) : fmt(x.baseline) + ' to ' + fmt(x.after)} over ${span} (${x.baselineDate} to ${x.afterDate}).`,
+      x.work ? `What changed: ${String(x.work).trim().replace(/([^.!?])$/, '$1.')}` : '',
+      estimate ? 'This figure is an estimate. It was not measured.' : `How it was measured: ${x.method.trim().replace(/([^.!?])$/, '$1.')}`,
+    ].filter(Boolean).join(' ')
+    return {
+      metric: x.metric, label: x.label, estimate,
+      headline: `${x.metric}: ${fmt(x.baseline)} → ${fmt(x.after)}${estimate ? ' (estimate)' : ''}`,
+      body, change: x.change, changePct: x.changePct,
+      permissionDate: x.permissionDate || null,
+    }
+  }
+
+  function caseStudies(org) {
+    return (org.results || []).map((r) => caseStudy(org, r)).filter(Boolean)
+  }
+
   return {
+    quickWins, evidenceLabel, blankResult, resultRecord, results, caseStudy, caseStudies,
     MATURITY_AREAS, TASK_KINDS, ORG_KINDS, COUNTRIES, CAUSES, READINESS_ITEMS,
     maturity, automationPlan, roadmap, eligiblePrograms, grantSearches, readiness, deadlines, applicationKit, aiPrompt, helpBrief,
     RULES, WEIGHTS, SOURCE_TYPES, REACH_ITEMS, DEFAULT_SCENARIO,

@@ -30,9 +30,22 @@ your organization" to enter real numbers.
 node test.js
 ```
 
-22 checks on the model and catalog. No build, no server, no install, no keys, no
-network: nothing entered leaves the browser. `index.html`, `model.js` and `catalog.js`
-must stay in the same folder.
+31 checks on the model and catalog. No build, no server, no install. Figures an
+organization enters never leave the browser. Keep every file in the same folder.
+
+## Deploy and connect
+
+`vercel.json` deploys the folder as-is (no build step, clean URLs, so `/apply` works);
+`.vercelignore` keeps tests and docs off the site. Everything that sends data is
+configured in **`config.js`**, and every value there is empty by default — empty means off:
+
+| Setting | What it turns on |
+| --- | --- |
+| `FORM_ENDPOINT` | `apply.html` cohort applications, posted to Formspree or a Google Apps Script web app that writes to a Sheet |
+| `SIGNUP_ENDPOINT`, `SIGNUP_EMAIL_FIELD`, `SIGNUP_TAG` | The email signup on both pages, sent with `tag=mission` (Kit: use `email_address` and also set the tag on the Kit form) |
+| `POSTHOG_KEY`, `POSTHOG_HOST` | PostHog, with autocapture and session recording off. Only the named events in `site.js` are sent, never what anyone types |
+
+Until an endpoint is set, the page says it is not connected and sends nothing.
 
 ## Hypothesis
 
@@ -48,8 +61,8 @@ a finding within 90 days, or if leaders cannot complete the intake unaided.
 | 01 Mission Intelligence | Health score across six areas, ranked risks and opportunities, each with a reason and a next step |
 | 02 Mission Simulator | Lose the largest funder, add funding, hire, automate admin hours — 24-month cash, runway and people served |
 | 03 Mission Funding | **Eligible now:** 16 real technology programs filtered by registration, kind of organization and country, with what each gives, how to claim it and the official link. **Find grants:** links into real grant databases for the organization's country, pre-filled with its cause where the site allows. **Get ready:** the documents funders ask for. **Pipeline:** opportunities with deadlines and days left. **Application kit:** reusable answers assembled from the organization's own figures, and a prompt for the AI assistant it already uses |
-| 04 Mission Reach | 13-item checklist across findability, accessibility, giving and storytelling, with the three fixes to do first |
-| 05 Mission Outcomes | Indicators with start, now and target; a printable one-page report |
+| 04 Mission Reach | 13-item checklist across findability, accessibility, giving and storytelling, with the three fixes to do first. **Quick win:** Google Ad Grants readiness checklist, also placed first on the roadmap |
+| 05 Mission Outcomes | Indicators with start, now and target, each marked measured or estimate; a printable one-page report. **Before and after:** per-nonprofit results (baseline, after, both dates, how it was measured, permission to publish) with a case-study preview that appears only when `permission_to_publish` is true |
 | Transformation | **Assessment:** digital maturity across the eight practice areas. **Admin work:** a task inventory with the hours that could come back. **90-day roadmap:** next steps from every module, quick wins first, each marked "do it yourself" or "ARC can help", with status. **Get help:** a brief the organization can copy and send to ARC |
 
 All the arithmetic lives in `model.js` as pure functions. Every threshold is in the
@@ -74,6 +87,14 @@ The record's signal is whether a nonprofit **acts on a finding**. Each finding h
 collecting it means asking the organization for their export file (Organization → Export)
 at the 90-day follow-up. Nothing is sent anywhere.
 
+## Estimates and measurements
+
+ARC's honesty rule: a number is shown as **measured** only when someone counted it, and
+for before-and-after results, says how. Everything else carries an *Estimate* label:
+Simulator projections, hours that could come back, the weighted pipeline, unmeasured
+outcome indicators (also in the application kit's text), and case studies. The rule
+lives in `evidenceLabel` and `resultRecord` in `model.js`.
+
 ## What is faked
 
 - **The sample organization.** Harbor Light Youth Center is fictional; every figure is
@@ -92,8 +113,11 @@ at the 90-day follow-up. Nothing is sent anywhere.
 - **The hours that could come back.** A fixed share per kind of task (60% of data entry,
   50% of scheduling and so on). Planning assumptions, not measurements.
 - **The maturity statements and roadmap ordering.** Chosen by judgement.
-- **"Get help".** Produces text to copy. It sends nothing and there is no ARC intake
-  behind it yet.
+- **"Get help".** Produces text to copy, and links to `apply.html`. The application form
+  sends nothing until `FORM_ENDPOINT` is set.
+- **The Ad Grants checklist.** Not yet checked against Google's pages (they could not be
+  reached when it was written), so it leaves out exact thresholds and says so on screen.
+  Read Google's Ad Grants help pages and set `checked` in `catalog.js` before use.
 - **Capacity.** The Simulator assumes people served moves in proportion to program
   spending, and that income and costs arrive evenly through the year.
 - **Reach.** Self-assessed. Nothing actually inspects the organization's website.
@@ -120,6 +144,10 @@ path is only shape-checked.
 | File | What it is |
 | --- | --- |
 | `index.html` | The whole interface, one page |
+| `apply.html` | Cohort application form |
+| `config.js` | Form, signup and PostHog settings: the one place to configure what leaves the browser |
+| `site.js` | PostHog loader, named events, email signup, form posting |
+| `vercel.json` | Static deployment settings |
 | `model.js` | All the arithmetic, as pure functions; thresholds in `RULES` at the top |
 | `catalog.js` | Technology programs and grant databases, with the date they were checked |
 | `test.js` | The checks, run with `node test.js` |
